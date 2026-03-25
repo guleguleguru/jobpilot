@@ -1,0 +1,200 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  width: 260px;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 13px;
+  background: #fff;
+  color: #1f2937;
+}
+
+.popup-wrap { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Header ── */
+.popup-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.logo {
+  width: 32px; height: 32px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700; font-size: 12px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.header-title { font-size: 14px; font-weight: 700; line-height: 1.2; }
+.header-sub   { font-size: 11px; color: #9ca3af; }
+.header-version {
+  margin-left: auto;
+  font-size: 10px;
+  color: #d1d5db;
+  align-self: flex-start;
+}
+
+/* ── 简历模板行 ── */
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f7ff;
+  border: 1px solid #dbeafe;
+  border-radius: 7px;
+  padding: 6px 10px;
+}
+
+.profile-label {
+  font-size: 11px;
+  color: #3b82f6;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.profile-select-sm {
+  flex: 1;
+  font-size: 12px;
+  color: #1f2937;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-select-sm:disabled {
+  color: #9ca3af;
+  cursor: default;
+}
+
+/* ── 状态卡片 ── */
+.status-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 12px 14px;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+}
+
+.status-loading {
+  display: flex; align-items: center; gap: 7px;
+  color: #6b7280; font-size: 12px;
+}
+
+.status-ok {
+  display: flex; align-items: center;
+  gap: 12px; width: 100%;
+}
+
+.status-count {
+  display: flex; align-items: baseline; gap: 3px;
+  flex-shrink: 0;
+}
+
+.status-count span:first-child {
+  font-size: 26px; font-weight: 700; color: #2563eb;
+}
+
+.status-count-label { font-size: 12px; color: #6b7280; }
+
+.status-breakdown {
+  font-size: 11px; color: #6b7280; line-height: 1.5;
+}
+
+.status-none {
+  font-size: 12px; color: #9ca3af; width: 100%; text-align: center;
+}
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 13px; height: 13px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── API Key 警告 ── */
+.warn-banner {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 11px;
+  color: #92400e;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.warn-link {
+  background: none; border: none;
+  color: #d97706; font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+  padding: 0;
+}
+
+.warn-link:hover { color: #b45309; }
+
+/* ── 主按钮 ── */
+.btn-main {
+  width: 100%; padding: 11px;
+  background: #2563eb; color: #fff;
+  border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+
+.btn-main:hover:not(:disabled) { background: #1d4ed8; }
+
+.btn-main:disabled { background: #93c5fd; cursor: not-allowed; }
+
+/* ── 填写结果 ── */
+.fill-result {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-size: 12px; color: #15803d;
+  text-align: center;
+}
+
+.fill-result.error {
+  background: #fef2f2; border-color: #fecaca; color: #dc2626;
+}
+
+/* ── 底部链接 ── */
+.popup-footer {
+  display: flex; align-items: center;
+  justify-content: center; gap: 6px;
+  padding-top: 2px;
+}
+
+.footer-link {
+  background: none; border: none;
+  color: #6b7280; font-size: 11px;
+  cursor: pointer; padding: 0;
+}
+
+.footer-link:hover { color: #2563eb; }
+
+.footer-sep { color: #d1d5db; }
+
+.footer-shortcut { font-size: 11px; color: #9ca3af; }
+
+kbd {
+  background: #f3f4f6; border: 1px solid #e5e7eb;
+  border-radius: 3px; padding: 0 4px;
+  font-size: 10px; color: #6b7280;
+}

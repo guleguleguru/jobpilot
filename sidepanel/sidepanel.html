@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobPilot 智投助手</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+
+  <!-- 顶部标题栏 -->
+  <header class="sp-header">
+    <span class="sp-logo">JP</span>
+    <h1>JobPilot <span>智投助手</span></h1>
+  </header>
+
+  <!-- Tab 导航 -->
+  <nav class="sp-tabs">
+    <button class="tab-btn active" data-tab="fill">填写</button>
+    <button class="tab-btn" data-tab="profile">资料</button>
+    <button class="tab-btn" data-tab="settings">设置</button>
+  </nav>
+
+  <!-- ── Tab 1: 填写 ── -->
+  <section class="tab-content active" id="tab-fill">
+    <div class="fill-header">
+      <div class="detect-info" id="detectInfo">
+        <span class="spinner-sm"></span> 正在检测表单...
+      </div>
+      <button class="btn-detect" id="btnDetect" title="重新检测">↺</button>
+    </div>
+
+    <div class="fill-preview" id="fillPreview" style="display:none"></div>
+
+    <button class="btn-fill-main" id="btnFillMain" disabled>一键填写</button>
+
+    <div class="fill-results" id="fillResults" style="display:none">
+      <div class="results-header">
+        <div class="results-summary" id="resultsSummary"></div>
+        <button class="btn-refill" id="btnRefill">↺ 重新填写</button>
+      </div>
+      <ul class="results-list" id="resultsList"></ul>
+    </div>
+
+    <div class="empty-hint" id="emptyHint">
+      在招聘页面点击「一键填写」，即可自动填写表单字段
+      <div class="shortcut-hint">快捷键：<kbd>Alt+J</kbd></div>
+    </div>
+  </section>
+
+  <!-- ── Tab 2: 资料 ── -->
+  <section class="tab-content" id="tab-profile">
+
+    <!-- Module C: 多模板选择器 -->
+    <div class="profile-selector-area">
+      <select id="profileSelect" class="profile-select"></select>
+      <button class="btn-icon" id="btnNewProfile"       title="新建模板">＋</button>
+      <button class="btn-icon" id="btnDuplicateProfile" title="复制当前">⊕</button>
+      <button class="btn-icon btn-icon-danger" id="btnDeleteProfile" title="删除当前">✕</button>
+    </div>
+
+    <!-- 工具栏：PDF 导入 + JSON 导入/导出 -->
+    <div class="profile-toolbar">
+      <button class="btn-sm btn-accent" id="btnPdfImport">从 PDF 导入</button>
+      <button class="btn-sm" id="btnImportProfile">导入 JSON</button>
+      <button class="btn-sm" id="btnExportProfile">导出 JSON</button>
+      <input type="file" id="importFileInput" accept=".json" style="display:none">
+      <input type="file" id="pdfFileInput"    accept=".pdf"  style="display:none">
+    </div>
+
+    <form class="profile-form" id="profileForm">
+
+      <div class="form-section">
+        <h3 class="section-title">基本信息</h3>
+        <div class="form-row">
+          <label>姓名</label>
+          <input type="text" name="name" placeholder="张三">
+        </div>
+        <div class="form-row two-col">
+          <div><label>姓（lastName）</label><input type="text" name="lastName" placeholder="张"></div>
+          <div><label>名（firstName）</label><input type="text" name="firstName" placeholder="三"></div>
+        </div>
+        <div class="form-row two-col">
+          <div>
+            <label>性别</label>
+            <select name="gender">
+              <option value="">请选择</option>
+              <option value="男">男</option>
+              <option value="女">女</option>
+            </select>
+          </div>
+          <div><label>出生日期</label><input type="date" name="birthday"></div>
+        </div>
+        <div class="form-row two-col">
+          <div><label>民族</label><input type="text" name="ethnicity" placeholder="汉族"></div>
+          <div><label>籍贯</label><input type="text" name="hometown" placeholder="上海市"></div>
+        </div>
+        <div class="form-row two-col">
+          <div>
+            <label>政治面貌</label>
+            <select name="politicalStatus">
+              <option value="">请选择</option>
+              <option value="中共党员">中共党员</option>
+              <option value="中共预备党员">中共预备党员</option>
+              <option value="共青团员">共青团员</option>
+              <option value="民主党派">民主党派</option>
+              <option value="群众">群众</option>
+            </select>
+          </div>
+          <div><label>身份证号</label><input type="text" name="idNumber" placeholder="（可不填）"></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">联系方式</h3>
+        <div class="form-row"><label>手机号</label><input type="tel" name="phone" placeholder="138XXXXXXXX"></div>
+        <div class="form-row"><label>邮箱</label><input type="email" name="email" placeholder="name@example.com"></div>
+        <div class="form-row"><label>地址</label><input type="text" name="address" placeholder="上海市浦东新区..."></div>
+        <div class="form-row"><label>微信号</label><input type="text" name="wechat" placeholder="wechat_id"></div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">教育背景</h3>
+        <div id="educationList"></div>
+        <button type="button" class="btn-add-entry" id="btnAddEducation">＋ 添加教育经历</button>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">实习/工作经历</h3>
+        <div id="experienceList"></div>
+        <button type="button" class="btn-add-entry" id="btnAddExperience">＋ 添加工作经历</button>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">技能与链接</h3>
+        <div class="form-row"><label>技能（逗号分隔）</label><input type="text" name="skills" placeholder="Python, JavaScript, React"></div>
+        <div class="form-row"><label>GitHub</label><input type="url" name="links.github" placeholder="https://github.com/..."></div>
+        <div class="form-row"><label>LinkedIn</label><input type="url" name="links.linkedin" placeholder="https://linkedin.com/in/..."></div>
+        <div class="form-row"><label>个人网站</label><input type="url" name="links.website" placeholder="https://..."></div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">自我介绍</h3>
+        <div class="form-row">
+          <textarea name="selfIntro" rows="4" placeholder="简要描述你的背景、技能和求职目标..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">简历文件</h3>
+        <div class="resume-upload">
+          <div class="resume-current" id="resumeCurrent">未上传简历</div>
+          <label class="btn-sm btn-upload" for="resumeFileInput">上传 PDF 简历</label>
+          <input type="file" id="resumeFileInput" accept=".pdf,.doc,.docx" style="display:none">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-save">保存资料</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ── Tab 3: 设置 ── -->
+  <section class="tab-content" id="tab-settings">
+    <form class="settings-form" id="settingsForm">
+
+      <div class="form-section">
+        <h3 class="section-title">AI 模型</h3>
+
+        <div class="form-row">
+          <label>服务商</label>
+          <select name="provider" id="providerSelect">
+            <option value="deepseek">DeepSeek</option>
+            <option value="gemini">Google Gemini</option>
+            <option value="qwen">通义千问</option>
+            <option value="zhipu">智谱 GLM</option>
+            <option value="moonshot">Moonshot / Kimi</option>
+            <option value="claude">Claude</option>
+            <option value="ollama">本地 Ollama</option>
+          </select>
+        </div>
+
+        <!-- Ollama 提示（仅 Ollama 时显示） -->
+        <div class="form-row ollama-hint" id="ollamaHint" style="display:none">
+          <p class="hint">Ollama 需在本地运行。启动命令：<code>ollama serve</code><br>
+          模型下载示例：<code>ollama pull qwen2.5:7b</code></p>
+        </div>
+
+        <div class="form-row" id="apiKeyRow">
+          <label>API Key</label>
+          <div class="input-with-toggle">
+            <input type="password" name="apiKey" id="apiKeyInput" placeholder="输入 API Key">
+            <button type="button" class="btn-toggle-key" id="btnToggleKey">显示</button>
+          </div>
+        </div>
+
+        <div class="form-row" id="modelRow">
+          <label>模型</label>
+          <select name="model" id="modelSelect"></select>
+        </div>
+
+        <!-- 测试连接 -->
+        <div class="form-row test-conn-row">
+          <button type="button" class="btn-sm btn-test" id="btnTestConn">测试连接</button>
+          <span class="test-result" id="testResult"></span>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">填写选项</h3>
+        <div class="form-row toggle-row">
+          <label>启用 AI 匹配</label>
+          <label class="toggle">
+            <input type="checkbox" name="aiEnabled" id="aiEnabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>置信度阈值 <span id="thresholdValue">0.7</span></label>
+          <input type="range" name="confidenceThreshold" min="0.3" max="1" step="0.05" id="confidenceThreshold">
+          <p class="hint">低于此阈值的字段将标黄提示人工确认</p>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-save">保存设置</button>
+      </div>
+    </form>
+
+    <div class="form-section" style="margin-top:20px">
+      <h3 class="section-title">填写历史（最近 20 条）</h3>
+      <div id="historyList"><p class="history-empty">暂无记录</p></div>
+      <div style="margin-top:10px">
+        <button class="btn-sm btn-danger" id="btnClearHistory">清除历史</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PDF 导入模态框 ── -->
+  <div class="pdf-overlay" id="pdfOverlay" style="display:none">
+    <div class="pdf-modal">
+      <div class="pdf-modal-header">
+        <h3 id="pdfModalTitle">从 PDF 导入简历</h3>
+        <button class="pdf-modal-close" id="pdfModalClose">✕</button>
+      </div>
+
+      <!-- 步骤 1：选择解析方式 -->
+      <div class="pdf-step" id="pdfStepMode">
+        <p class="pdf-filename" id="pdfFilename"></p>
+        <p class="pdf-ai-fallback-hint" id="pdfAiFallbackHint" style="display:none"></p>
+        <div class="pdf-modes">
+          <button class="pdf-mode-btn" id="btnLocalParse">
+            <span class="pdf-mode-icon">⚡</span>
+            <div>
+              <div class="pdf-mode-label">本地快速解析</div>
+              <div class="pdf-mode-desc">不消耗 API · 速度快 · 准确度一般</div>
+            </div>
+          </button>
+          <button class="pdf-mode-btn" id="btnAIParse">
+            <span class="pdf-mode-icon">🤖</span>
+            <div>
+              <div class="pdf-mode-label">AI 智能解析</div>
+              <div class="pdf-mode-desc">消耗 API · 速度慢 · 准确度高</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 步骤 2：解析中 -->
+      <div class="pdf-step" id="pdfStepLoading" style="display:none">
+        <div class="pdf-loading-content">
+          <span class="spinner-lg"></span>
+          <p id="pdfLoadingText">正在解析...</p>
+        </div>
+      </div>
+
+      <!-- 步骤 3：预览并确认 -->
+      <div class="pdf-step" id="pdfStepPreview" style="display:none">
+        <div class="pdf-preview-actions-top">
+          <button class="btn-sm" id="btnSelectAll">全选</button>
+          <button class="btn-sm" id="btnDeselectAll">取消全选</button>
+          <span class="pdf-preview-hint">勾选要导入的字段</span>
+        </div>
+        <div class="pdf-preview-list" id="pdfPreviewList"></div>
+        <div class="pdf-preview-actions-bottom">
+          <button class="btn-save pdf-confirm-btn" id="btnConfirmImport">确认导入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全局 Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>

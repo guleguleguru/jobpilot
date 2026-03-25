@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "JobPilot 智投助手",
+  "version": "0.4.0",
+  "description": "AI 驱动的求职表单自动填写助手，支持中国校招及各类 ATS 平台",
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    },
+    "default_title": "JobPilot 智投助手"
+  },
+
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "content/form-detector.js",
+        "content/label-matcher.js",
+        "content/file-uploader.js",
+        "content/form-filler.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+
+  "commands": {
+    "quick-fill": {
+      "suggested_key": {
+        "default": "Alt+J",
+        "mac": "Alt+J"
+      },
+      "description": "一键填写当前页面表单"
+    }
+  },
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "sidePanel"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["lib/pdf.min.mjs", "lib/pdf.worker.min.mjs", "data/default-profile.json"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>JobPilot 智投助手</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-wrap">
+
+    <header class="popup-header">
+      <span class="logo">JP</span>
+      <div class="header-text">
+        <div class="header-title">JobPilot</div>
+        <div class="header-sub">智投助手</div>
+      </div>
+      <div class="header-version">v0.4</div>
+    </header>
+
+    <!-- 当前简历模板 -->
+    <div class="profile-row">
+      <span class="profile-label">简历</span>
+      <select class="profile-select-sm" id="profileSelect" disabled>
+        <option>加载中...</option>
+      </select>
+    </div>
+
+    <!-- 状态区 -->
+    <div class="status-card" id="statusCard">
+      <div class="status-loading" id="statusLoading">
+        <span class="spinner"></span> 检测表单中...
+      </div>
+      <div class="status-ok" id="statusOk" style="display:none">
+        <div class="status-count">
+          <span id="fieldCount">0</span>
+          <span class="status-count-label">个字段</span>
+        </div>
+        <div class="status-breakdown" id="statusBreakdown"></div>
+      </div>
+      <div class="status-none" id="statusNone" style="display:none">
+        未检测到表单
+      </div>
+    </div>
+
+    <!-- API Key 未配置提示 -->
+    <div class="warn-banner" id="warnApiKey" style="display:none">
+      未配置 API Key，将仅使用正则匹配
+      <button class="warn-link" id="btnGoSettings">去设置 →</button>
+    </div>
+
+    <!-- 主操作按钮 -->
+    <button class="btn-main" id="btnFill" disabled>一键填写</button>
+
+    <!-- 填写结果 -->
+    <div class="fill-result" id="fillResult" style="display:none">
+      <span id="fillResultText"></span>
+    </div>
+
+    <!-- 底部链接 -->
+    <div class="popup-footer">
+      <button class="footer-link" id="btnSidepanel">侧边栏</button>
+      <span class="footer-sep">·</span>
+      <button class="footer-link" id="btnSettings">设置</button>
+      <span class="footer-sep">·</span>
+      <span class="footer-shortcut"><kbd>Alt+J</kbd> 快捷填写</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
