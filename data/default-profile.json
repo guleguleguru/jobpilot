@@ -1,0 +1,48 @@
+{
+  "name": "张三",
+  "firstName": "三",
+  "lastName": "张",
+  "gender": "男",
+  "birthday": "1999-01-15",
+  "ethnicity": "汉族",
+  "hometown": "上海市",
+  "politicalStatus": "共青团员",
+  "idNumber": "",
+  "phone": "13800138000",
+  "email": "zhangsan@example.com",
+  "address": "上海市浦东新区xxx路xxx号",
+  "wechat": "zhangsan_wx",
+
+  "education": [
+    {
+      "school": "上海交通大学",
+      "major": "计算机科学与技术",
+      "degree": "本科",
+      "startDate": "2017-09",
+      "endDate": "2021-06",
+      "gpa": "3.8/4.0"
+    }
+  ],
+
+  "experience": [
+    {
+      "company": "字节跳动",
+      "title": "后端开发实习生",
+      "startDate": "2020-07",
+      "endDate": "2020-12",
+      "description": "参与推荐系统开发，使用 Go 语言实现高性能数据处理服务，优化接口响应时间 30%。"
+    }
+  ],
+
+  "skills": ["Python", "JavaScript", "React", "Node.js", "Docker", "Linux"],
+
+  "links": {
+    "github": "https://github.com/zhangsan",
+    "linkedin": "",
+    "website": ""
+  },
+
+  "selfIntro": "具有扎实的计算机基础和丰富的项目经验，热爱编程，善于学习新技术，有良好的团队协作能力。",
+
+  "resumeFilePath": ""
+}

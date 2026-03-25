@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>JobPilot 测试表单 — 模拟校招申请</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #f5f7fa;
+      padding: 40px 20px;
+      color: #333;
+    }
+    .page-title {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .page-title h1 { font-size: 22px; color: #1a1a1a; }
+    .page-title p  { color: #888; font-size: 14px; margin-top: 6px; }
+
+    .form-card {
+      max-width: 760px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 36px 40px;
+    }
+
+    .section { margin-bottom: 28px; }
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #2563eb;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e5e7eb;
+      margin-bottom: 18px;
+    }
+
+    .row { display: grid; gap: 16px; margin-bottom: 14px; }
+    .row-1 { grid-template-columns: 1fr; }
+    .row-2 { grid-template-columns: 1fr 1fr; }
+    .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label {
+      font-size: 13px;
+      color: #555;
+      font-weight: 500;
+    }
+    .field label .req { color: #ef4444; margin-left: 2px; }
+
+    .field input,
+    .field select,
+    .field textarea {
+      padding: 9px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 7px;
+      font-size: 14px;
+      color: #1a1a1a;
+      background: white;
+      transition: border 0.15s;
+      width: 100%;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    .field textarea { resize: vertical; min-height: 80px; }
+
+    .submit-area {
+      text-align: center;
+      padding-top: 10px;
+    }
+    .btn-submit {
+      padding: 12px 48px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-submit:hover { background: #1d4ed8; }
+
+    .test-tip {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #92400e;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-title">
+  <h1>春季校园招聘 — 在线申请表</h1>
+  <p>JobPilot 测试表单 · 模拟真实校招场景</p>
+</div>
+
+<div class="form-card">
+
+  <div class="test-tip">
+    此页面用于测试 JobPilot 扩展的自动填写功能。安装扩展后，打开侧边栏点击「一键填写」即可。
+  </div>
+
+  <form id="applicationForm">
+
+    <!-- 一、基本信息 -->
+    <div class="section">
+      <div class="section-title">一、基本信息</div>
+
+      <div class="row row-3">
+        <div class="field">
+          <label>姓名 <span class="req">*</span></label>
+          <input type="text" name="applicant_name" id="name" placeholder="请输入您的姓名" required>
+        </div>
+        <div class="field">
+          <label>性别 <span class="req">*</span></label>
+          <select name="gender" id="gender" required>
+            <option value="">请选择</option>
+            <option value="男">男</option>
+            <option value="女">女</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>出生日期 <span class="req">*</span></label>
+          <input type="date" name="birthday" id="birthday" required>
+        </div>
+      </div>
+
+      <div class="row row-3">
+        <div class="field">
+          <label>民族</label>
+          <input type="text" name="ethnicity" id="ethnicity" placeholder="汉族">
+        </div>
+        <div class="field">
+          <label>籍贯</label>
+          <input type="text" name="hometown" id="hometown" placeholder="省/市">
+        </div>
+        <div class="field">
+          <label>政治面貌</label>
+          <select name="political_status" id="politicalStatus">
+            <option value="">请选择</option>
+            <option value="中共党员">中共党员</option>
+            <option value="中共预备党员">中共预备党员</option>
+            <option value="共青团员">共青团员</option>
+            <option value="民主党派">民主党派</option>
+            <option value="群众">群众</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row row-2">
+        <div class="field">
+          <label>身份证号</label>
+          <input type="text" name="id_number" id="idNumber" placeholder="18位身份证号">
+        </div>
+        <div class="field">
+          <label>现居住地址</label>
+          <input type="text" name="current_address" id="address" placeholder="市/区/详细地址">
+        </div>
+      </div>
+    </div>
+
+    <!-- 二、联系方式 -->
+    <div class="section">
+      <div class="section-title">二、联系方式</div>
+
+      <div class="row row-3">
+        <div class="field">
+          <label>手机号码 <span class="req">*</span></label>
+          <input type="tel" name="mobile_phone" id="phone" placeholder="11位手机号" required>
+        </div>
+        <div class="field">
+          <label>电子邮箱 <span class="req">*</span></label>
+          <input type="email" name="email_address" id="email" placeholder="your@email.com" required>
+        </div>
+        <div class="field">
+          <label>微信号</label>
+          <input type="text" name="wechat_id" id="wechat" placeholder="微信 ID">
+        </div>
+      </div>
+    </div>
+
+    <!-- 三、教育背景（2 段，测试多条匹配） -->
+    <div class="section">
+      <div class="section-title">三、教育背景</div>
+
+      <!-- 第 1 段 -->
+      <p style="font-size:12px;color:#888;margin-bottom:10px">第 1 段</p>
+      <div class="row row-2">
+        <div class="field">
+          <label>毕业院校 <span class="req">*</span></label>
+          <input type="text" name="university_1" id="school1" placeholder="就读/毕业学校全称" required>
+        </div>
+        <div class="field">
+          <label>所学专业 <span class="req">*</span></label>
+          <input type="text" name="major_1" id="major1" placeholder="专业名称" required>
+        </div>
+      </div>
+      <div class="row row-3">
+        <div class="field">
+          <label>最高学历 <span class="req">*</span></label>
+          <select name="education_level_1" id="degree1" required>
+            <option value="">请选择</option>
+            <option value="大专">大专</option>
+            <option value="本科">本科</option>
+            <option value="硕士">硕士</option>
+            <option value="博士">博士</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>入学时间</label>
+          <input type="month" name="enrollment_date_1" id="eduStart1">
+        </div>
+        <div class="field">
+          <label>毕业时间 <span class="req">*</span></label>
+          <input type="month" name="graduation_date_1" id="eduEnd1" required>
+        </div>
+      </div>
+      <div class="row row-1">
+        <div class="field">
+          <label>GPA / 平均分</label>
+          <input type="text" name="gpa_1" id="gpa1" placeholder="如：3.8/4.0 或 90/100">
+        </div>
+      </div>
+
+      <!-- 第 2 段 -->
+      <p style="font-size:12px;color:#888;margin:14px 0 10px">第 2 段（测试多段教育匹配）</p>
+      <div class="row row-2">
+        <div class="field">
+          <label>毕业院校</label>
+          <input type="text" name="university_2" id="school2" placeholder="第二段学校">
+        </div>
+        <div class="field">
+          <label>所学专业</label>
+          <input type="text" name="major_2" id="major2" placeholder="第二段专业">
+        </div>
+      </div>
+      <div class="row row-3">
+        <div class="field">
+          <label>学历</label>
+          <select name="education_level_2" id="degree2">
+            <option value="">请选择</option>
+            <option value="大专">大专</option>
+            <option value="本科">本科</option>
+            <option value="硕士">硕士</option>
+            <option value="博士">博士</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>入学时间</label>
+          <input type="month" name="enrollment_date_2" id="eduStart2">
+        </div>
+        <div class="field">
+          <label>毕业时间</label>
+          <input type="month" name="graduation_date_2" id="eduEnd2">
+        </div>
+      </div>
+    </div>
+
+    <!-- 四、实习/工作经历（2 段，测试多条匹配） -->
+    <div class="section">
+      <div class="section-title">四、实习/工作经历</div>
+
+      <!-- 第 1 段 -->
+      <p style="font-size:12px;color:#888;margin-bottom:10px">第 1 段（最近）</p>
+      <div class="row row-2">
+        <div class="field">
+          <label>公司名称</label>
+          <input type="text" name="company_name_1" id="company1" placeholder="实习/工作单位名称">
+        </div>
+        <div class="field">
+          <label>担任职位</label>
+          <input type="text" name="job_title_1" id="jobTitle1" placeholder="职位/岗位名称">
+        </div>
+      </div>
+      <div class="row row-2">
+        <div class="field">
+          <label>开始时间</label>
+          <input type="month" name="work_start_1" id="workStart1">
+        </div>
+        <div class="field">
+          <label>结束时间</label>
+          <input type="month" name="work_end_1" id="workEnd1">
+        </div>
+      </div>
+      <div class="row row-1">
+        <div class="field">
+          <label>工作描述</label>
+          <textarea name="work_description_1" id="workDesc1" rows="3"
+            placeholder="简要描述主要职责和项目成果..."></textarea>
+        </div>
+      </div>
+
+      <!-- 第 2 段 -->
+      <p style="font-size:12px;color:#888;margin:14px 0 10px">第 2 段（测试多段经历匹配）</p>
+      <div class="row row-2">
+        <div class="field">
+          <label>实习公司</label>
+          <input type="text" name="company_name_2" id="company2" placeholder="第二段公司">
+        </div>
+        <div class="field">
+          <label>实习岗位</label>
+          <input type="text" name="job_title_2" id="jobTitle2" placeholder="第二段职位">
+        </div>
+      </div>
+      <div class="row row-2">
+        <div class="field">
+          <label>开始时间</label>
+          <input type="month" name="work_start_2" id="workStart2">
+        </div>
+        <div class="field">
+          <label>结束时间</label>
+          <input type="month" name="work_end_2" id="workEnd2">
+        </div>
+      </div>
+      <div class="row row-1">
+        <div class="field">
+          <label>工作描述</label>
+          <textarea name="work_description_2" id="workDesc2" rows="3"
+            placeholder="第二段工作描述..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 五、技能与自我评价 -->
+    <div class="section">
+      <div class="section-title">五、技能与自我评价</div>
+
+      <div class="row row-1">
+        <div class="field">
+          <label>专业技能（多个技能用逗号分隔）</label>
+          <input type="text" name="skills" id="skills"
+            placeholder="如：Python, JavaScript, 数据分析, 英语 CET-6...">
+        </div>
+      </div>
+
+      <div class="row row-1">
+        <div class="field">
+          <label>自我评价</label>
+          <textarea name="self_evaluation" id="selfIntro" rows="4"
+            placeholder="请简要介绍你的优势、特点和职业规划..."></textarea>
+        </div>
+      </div>
+
+      <div class="row row-1">
+        <div class="field">
+          <label>为什么想加入我们？<span class="req">*</span></label>
+          <textarea name="why_join" id="whyJoin" rows="4"
+            placeholder="请说明你对本公司/岗位感兴趣的原因..." required></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 六、岗位意向 -->
+    <div class="section">
+      <div class="section-title">六、岗位意向</div>
+
+      <div class="row row-2">
+        <div class="field">
+          <label>期望薪资</label>
+          <select name="expected_salary">
+            <option value="">请选择</option>
+            <option value="10k以下">10k 以下</option>
+            <option value="10k-15k">10k - 15k</option>
+            <option value="15k-20k">15k - 20k</option>
+            <option value="20k-30k">20k - 30k</option>
+            <option value="30k以上">30k 以上</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>可到岗时间</label>
+          <select name="availability">
+            <option value="">请选择</option>
+            <option value="立即到岗">立即到岗</option>
+            <option value="2周内">2 周内</option>
+            <option value="1个月内">1 个月内</option>
+            <option value="3个月内">3 个月内</option>
+            <option value="应届毕业后">应届毕业后</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 七、简历上传 -->
+    <div class="section">
+      <div class="section-title">七、简历附件</div>
+      <div class="row row-1">
+        <div class="field">
+          <label>上传简历 <span class="req">*</span>（PDF、Word，≤10MB）</label>
+          <input type="file" name="resume_file" id="resumeFile"
+            accept=".pdf,.doc,.docx" required>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-area">
+      <button type="submit" class="btn-submit">提交申请</button>
+    </div>
+
+  </form>
+</div>
+
+<script>
+  document.getElementById('applicationForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const data = new FormData(e.target);
+    const obj = {};
+    for (const [k, v] of data.entries()) obj[k] = v;
+    console.log('[TestForm] 提交数据：', obj);
+    alert('提交成功！（测试模式，数据已打印到控制台）');
+  });
+</script>
+</body>
+</html>
