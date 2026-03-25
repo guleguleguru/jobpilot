@@ -112,6 +112,7 @@ git clone <your-repo-url>
 - `PRIVACY.md`：隐私与数据流说明
 - `COMPATIBILITY.md`：真实站点兼容性跟踪
 - `CHANGELOG.md`：版本与维护变更记录
+- `CONTRIBUTING.md`：贡献与提 issue 说明
 
 ## 测试
 

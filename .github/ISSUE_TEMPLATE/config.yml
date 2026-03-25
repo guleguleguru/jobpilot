@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read compatibility notes
+    url: https://github.com/guleguleguru/jobpilot/blob/main/COMPATIBILITY.md
+    about: Check current known site compatibility before opening a new report.

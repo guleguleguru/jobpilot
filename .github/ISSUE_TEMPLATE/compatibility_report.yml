@@ -1,0 +1,84 @@
+name: Compatibility report
+description: Report site compatibility status for a recruiting page or ATS
+title: "[Compatibility] "
+labels:
+  - compatibility
+body:
+  - type: input
+    id: site
+    attributes:
+      label: Site / ATS
+      placeholder: 例如 智联招聘 / Greenhouse / Workday
+    validations:
+      required: true
+
+  - type: dropdown
+    id: region
+    attributes:
+      label: Region
+      options:
+        - CN
+        - Global
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: detection
+    attributes:
+      label: Form detection
+      options:
+        - working
+        - partial
+        - blocked
+        - untested
+    validations:
+      required: true
+
+  - type: dropdown
+    id: basic_fill
+    attributes:
+      label: Basic fill
+      options:
+        - working
+        - partial
+        - blocked
+        - untested
+
+  - type: dropdown
+    id: ai_fill
+    attributes:
+      label: AI fill
+      options:
+        - working
+        - partial
+        - blocked
+        - untested
+
+  - type: dropdown
+    id: upload
+    attributes:
+      label: Resume upload
+      options:
+        - working
+        - partial
+        - blocked
+        - untested
+
+  - type: dropdown
+    id: iframe
+    attributes:
+      label: iframe status
+      options:
+        - no iframe
+        - same-origin iframe
+        - cross-origin iframe
+        - unknown
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      placeholder: 说明哪些字段好用、哪些字段失败、是否需要站点特化逻辑
+    validations:
+      required: true

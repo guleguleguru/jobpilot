@@ -8,6 +8,8 @@
 - 新增公开发布用文案：`RELEASE-v0.4.0.md`
 - 新增隐私说明：`PRIVACY.md`
 - 新增兼容性跟踪台账：`COMPATIBILITY.md`
+- 新增贡献说明：`CONTRIBUTING.md`
+- 新增 GitHub issue 模板：bug report / compatibility report
 - 新增零依赖本地测试入口：`package.json` + `test/run-tests.js`
 
 ### Fixes
