@@ -107,6 +107,12 @@ git clone <your-repo-url>
 
 更正式的隐私说明见 `PRIVACY.md`。
 
+## 维护文档
+
+- `PRIVACY.md`：隐私与数据流说明
+- `COMPATIBILITY.md`：真实站点兼容性跟踪
+- `CHANGELOG.md`：版本与维护变更记录
+
 ## 测试
 
 仓库包含本地测试页面：
@@ -120,6 +126,8 @@ npm test
 ```
 
 修改代码后，在 `chrome://extensions` 页面点击刷新即可重新加载扩展。
+
+真实站点验证建议记录到 `COMPATIBILITY.md`。
 
 ## 已知限制
 

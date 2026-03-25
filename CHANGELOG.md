@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## Unreleased
+
+### Repository and maintenance
+
+- 新增标准开源仓库文件：`README.md`、`.gitignore`、`LICENSE`
+- 新增公开发布用文案：`RELEASE-v0.4.0.md`
+- 新增隐私说明：`PRIVACY.md`
+- 新增兼容性跟踪台账：`COMPATIBILITY.md`
+- 新增零依赖本地测试入口：`package.json` + `test/run-tests.js`
+
+### Fixes
+
+- 修复同源 `iframe` 字段在检测后无法正确传递给填写链路的问题
+- 修复多模板结构下 `education` 数据没有被正确带入 AI prompt 的问题
+- 修复 Ollama 模式被错误要求必须填写 API Key 的问题
+
+### Verification
+
+- 新增 7 个本地测试用例，覆盖：
+  - PDF 路径读写
+  - PDF 本地解析
+  - AI prompt 数据清洗
+  - AI 选项值修正
+
 ## v0.4.0 — Phase 4 功能增强
 
 ### Module A: 多 AI 服务商支持
