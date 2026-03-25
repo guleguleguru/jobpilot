@@ -7,6 +7,20 @@
 // 忽略的 input 类型
 const IGNORED_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image', 'password']);
 
+function normalizeText(text, maxLen = 180) {
+  return String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLen);
+}
+
+function cloneTextWithoutFields(node) {
+  if (!node) return '';
+  const clone = node.cloneNode(true);
+  clone.querySelectorAll('input, select, textarea, button, option').forEach(el => el.remove());
+  return normalizeText(clone.textContent || '');
+}
+
 /**
  * 为元素生成 CSS selector（简化版，优先用 id）
  * @param {Element} el
@@ -108,6 +122,71 @@ function extractLabel(el, doc) {
   return el.name || el.id || '';
 }
 
+function extractHelperText(el) {
+  const bits = [];
+
+  const describedBy = el.getAttribute('aria-describedby');
+  if (describedBy) {
+    for (const id of describedBy.split(/\s+/)) {
+      const node = el.ownerDocument.getElementById(id);
+      if (node) bits.push(node.textContent);
+    }
+  }
+
+  let next = el.nextElementSibling;
+  let guard = 0;
+  while (next && guard < 2) {
+    const text = normalizeText(next.textContent || '', 80);
+    if (text && text.length >= 2) bits.push(text);
+    next = next.nextElementSibling;
+    guard++;
+  }
+
+  return normalizeText(bits.join(' '), 140);
+}
+
+function extractSectionLabel(el) {
+  const fieldset = el.closest('fieldset');
+  if (fieldset) {
+    const legend = fieldset.querySelector('legend');
+    if (legend) {
+      const text = normalizeText(legend.textContent || '', 60);
+      if (text) return text;
+    }
+  }
+
+  let current = el.parentElement;
+  let depth = 0;
+  while (current && depth < 5) {
+    const heading = current.querySelector('h1, h2, h3, h4, h5, h6, .section-title, .form-section-title');
+    if (heading) {
+      const text = normalizeText(heading.textContent || '', 60);
+      if (text) return text;
+    }
+    current = current.parentElement;
+    depth++;
+  }
+
+  return '';
+}
+
+function extractContextText(el) {
+  const fragments = [];
+  const parent = el.parentElement;
+  if (parent) {
+    const parentText = cloneTextWithoutFields(parent);
+    if (parentText) fragments.push(parentText);
+  }
+
+  const container = el.closest('.form-row, .form-group, .field, .input-group, .question, li, td, .entry-card');
+  if (container && container !== parent) {
+    const containerText = cloneTextWithoutFields(container);
+    if (containerText) fragments.push(containerText);
+  }
+
+  return normalizeText(fragments.join(' '), 180);
+}
+
 /**
  * 提取 select/radio 的选项列表
  * @param {Element} el
@@ -158,6 +237,9 @@ function describeField(el, doc, formId, fieldIndex) {
 
   const label = extractLabel(el, doc);
   const options = extractOptions(el, doc);
+  const helperText = extractHelperText(el);
+  const sectionLabel = extractSectionLabel(el);
+  const contextText = extractContextText(el);
 
   // radio 字段只记录第一个，避免重复
   if (type === 'radio') {
@@ -172,8 +254,12 @@ function describeField(el, doc, formId, fieldIndex) {
     type,
     label,
     placeholder: el.placeholder || '',
+    title: el.title || '',
     required: el.required || el.getAttribute('aria-required') === 'true',
     options,
+    helperText,
+    sectionLabel,
+    contextText,
     value: el.value || '',
     xpath: buildXPath(el),
     selector: buildSelector(el, doc),

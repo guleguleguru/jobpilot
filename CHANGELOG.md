@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Functional enhancements
+
+- 增强字段语义识别：字段检测新增 `helperText`、`sectionLabel`、`contextText`，匹配不再只依赖 `label / placeholder / name`
+- 扩展中国招聘场景结构化字段：新增期望城市、到岗时间、期望薪资、实习时长、毕业年份、证件类型、项目经历、奖项、语言能力
+- 资料侧边栏新增对应表单区块和结构化卡片编辑能力
+- PDF 本地解析扩展到求职偏好、项目经历、奖项、语言能力等字段
+- AI prompt 清洗和字段摘要新增上述结构化字段与上下文信息
+
 ### Repository and maintenance
 
 - 新增标准开源仓库文件：`README.md`、`.gitignore`、`LICENSE`
@@ -20,9 +28,9 @@
 
 ### Verification
 
-- 新增 7 个本地测试用例，覆盖：
+- 新增 8 个本地测试用例，覆盖：
   - PDF 路径读写
-  - PDF 本地解析
+  - PDF 本地解析与新增字段提取
   - AI prompt 数据清洗
   - AI 选项值修正
 

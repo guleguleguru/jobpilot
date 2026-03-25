@@ -492,6 +492,79 @@ function createExperienceCard(entry = {}) {
   return card;
 }
 
+function createProjectCard(entry = {}) {
+  const card = document.createElement('div');
+  card.className = 'entry-card';
+  card.innerHTML = `
+    <div class="entry-card-header">
+      <span class="entry-card-label"></span>
+      <div class="entry-card-btns">
+        <button type="button" class="btn-icon btn-card-up" title="上移">↑</button>
+        <button type="button" class="btn-icon btn-card-down" title="下移">↓</button>
+        <button type="button" class="btn-icon btn-icon-danger btn-card-del" title="删除">✕</button>
+      </div>
+    </div>
+    <div class="form-row two-col">
+      <div><label>项目名称</label>
+        <input type="text" data-field="name" value="${escapeAttr(entry.name)}" placeholder="智能投递助手"></div>
+      <div><label>项目角色</label>
+        <input type="text" data-field="role" value="${escapeAttr(entry.role)}" placeholder="负责人 / 后端开发"></div>
+    </div>
+    <div class="form-row two-col">
+      <div><label>开始时间</label>
+        <input type="month" data-field="startDate" value="${escapeAttr(entry.startDate)}"></div>
+      <div><label>结束时间</label>
+        <input type="month" data-field="endDate" value="${escapeAttr(entry.endDate)}"></div>
+    </div>
+    <div class="form-row"><label>项目描述</label>
+      <textarea data-field="description" rows="3" placeholder="简要说明项目背景、职责和结果...">${escapeHtml(entry.description || '')}</textarea></div>`;
+  return card;
+}
+
+function createAwardCard(entry = {}) {
+  const card = document.createElement('div');
+  card.className = 'entry-card';
+  card.innerHTML = `
+    <div class="entry-card-header">
+      <span class="entry-card-label"></span>
+      <div class="entry-card-btns">
+        <button type="button" class="btn-icon btn-card-up" title="上移">↑</button>
+        <button type="button" class="btn-icon btn-card-down" title="下移">↓</button>
+        <button type="button" class="btn-icon btn-icon-danger btn-card-del" title="删除">✕</button>
+      </div>
+    </div>
+    <div class="form-row two-col">
+      <div><label>奖项名称</label>
+        <input type="text" data-field="name" value="${escapeAttr(entry.name)}" placeholder="国家奖学金"></div>
+      <div><label>获奖年份</label>
+        <input type="text" data-field="year" value="${escapeAttr(entry.year)}" placeholder="2024"></div>
+    </div>
+    <div class="form-row"><label>颁发单位</label>
+      <input type="text" data-field="issuer" value="${escapeAttr(entry.issuer)}" placeholder="教育部 / 学校"></div>`;
+  return card;
+}
+
+function createLanguageCard(entry = {}) {
+  const card = document.createElement('div');
+  card.className = 'entry-card';
+  card.innerHTML = `
+    <div class="entry-card-header">
+      <span class="entry-card-label"></span>
+      <div class="entry-card-btns">
+        <button type="button" class="btn-icon btn-card-up" title="上移">↑</button>
+        <button type="button" class="btn-icon btn-card-down" title="下移">↓</button>
+        <button type="button" class="btn-icon btn-icon-danger btn-card-del" title="删除">✕</button>
+      </div>
+    </div>
+    <div class="form-row two-col">
+      <div><label>语言</label>
+        <input type="text" data-field="name" value="${escapeAttr(entry.name)}" placeholder="英语"></div>
+      <div><label>水平</label>
+        <input type="text" data-field="level" value="${escapeAttr(entry.level)}" placeholder="CET-6 / 流利"></div>
+    </div>`;
+  return card;
+}
+
 function renderCards(listId, entries, createFn, label) {
   const list = document.getElementById(listId);
   list.innerHTML = '';
@@ -523,8 +596,16 @@ function readCards(listId, fields) {
 }
 
 // 卡片操作事件委托
-['educationList', 'experienceList'].forEach(listId => {
-  const label = listId === 'educationList' ? '教育经历' : '工作经历';
+const CARD_LIST_LABELS = {
+  educationList: '教育经历',
+  experienceList: '工作经历',
+  projectList: '项目经历',
+  awardList: '奖项',
+  languageList: '语言',
+};
+
+['educationList', 'experienceList', 'projectList', 'awardList', 'languageList'].forEach(listId => {
+  const label = CARD_LIST_LABELS[listId];
   document.getElementById(listId).addEventListener('click', e => {
     const card  = e.target.closest('.entry-card');
     if (!card) return;
@@ -556,6 +637,21 @@ document.getElementById('btnAddExperience').addEventListener('click', () => {
   refreshCardHeaders('experienceList', '工作经历');
 });
 
+document.getElementById('btnAddProject').addEventListener('click', () => {
+  document.getElementById('projectList').appendChild(createProjectCard());
+  refreshCardHeaders('projectList', '项目经历');
+});
+
+document.getElementById('btnAddAward').addEventListener('click', () => {
+  document.getElementById('awardList').appendChild(createAwardCard());
+  refreshCardHeaders('awardList', '奖项');
+});
+
+document.getElementById('btnAddLanguage').addEventListener('click', () => {
+  document.getElementById('languageList').appendChild(createLanguageCard());
+  refreshCardHeaders('languageList', '语言');
+});
+
 // ── 资料表单读写 ─────────────────────────────────────────────
 
 function profileToForm(profile) {
@@ -568,8 +664,15 @@ function profileToForm(profile) {
   set('gender', profile.gender); set('birthday', profile.birthday);
   set('ethnicity', profile.ethnicity); set('hometown', profile.hometown);
   set('politicalStatus', profile.politicalStatus); set('idNumber', profile.idNumber);
+  set('graduationYear', profile.graduationYear); set('documentType', profile.documentType);
   set('phone', profile.phone); set('email', profile.email);
   set('address', profile.address); set('wechat', profile.wechat);
+  if (profile.jobPreferences) {
+    set('jobPreferences.expectedCity', profile.jobPreferences.expectedCity);
+    set('jobPreferences.availableFrom', profile.jobPreferences.availableFrom);
+    set('jobPreferences.expectedSalary', profile.jobPreferences.expectedSalary);
+    set('jobPreferences.internshipDuration', profile.jobPreferences.internshipDuration);
+  }
 
   // 教育背景：兼容旧版对象格式，统一转为数组
   const eduArr = Array.isArray(profile.education)
@@ -581,6 +684,18 @@ function profileToForm(profile) {
   const expArr = Array.isArray(profile.experience) && profile.experience.length
     ? profile.experience : [{}];
   renderCards('experienceList', expArr, createExperienceCard, '工作经历');
+
+  const projectArr = Array.isArray(profile.projects) && profile.projects.length
+    ? profile.projects : [{}];
+  renderCards('projectList', projectArr, createProjectCard, '项目经历');
+
+  const awardArr = Array.isArray(profile.awards) && profile.awards.length
+    ? profile.awards : [{}];
+  renderCards('awardList', awardArr, createAwardCard, '奖项');
+
+  const languageArr = Array.isArray(profile.languages) && profile.languages.length
+    ? profile.languages : [{}];
+  renderCards('languageList', languageArr, createLanguageCard, '语言');
 
   set('skills', Array.isArray(profile.skills) ? profile.skills.join(', ') : (profile.skills || ''));
   if (profile.links) {
@@ -599,15 +714,29 @@ function formToProfile() {
   const skillsRaw = get('skills');
   const eduFields = ['school', 'major', 'degree', 'startDate', 'endDate', 'gpa'];
   const expFields = ['company', 'title', 'startDate', 'endDate', 'description'];
+  const projectFields = ['name', 'role', 'startDate', 'endDate', 'description'];
+  const awardFields = ['name', 'issuer', 'year'];
+  const languageFields = ['name', 'level'];
   return {
     name: get('name'), firstName: get('firstName'), lastName: get('lastName'),
     gender: get('gender'), birthday: get('birthday'),
+    graduationYear: get('graduationYear'),
     ethnicity: get('ethnicity'), hometown: get('hometown'),
     politicalStatus: get('politicalStatus'), idNumber: get('idNumber'),
+    documentType: get('documentType'),
     phone: get('phone'), email: get('email'),
     address: get('address'), wechat: get('wechat'),
+    jobPreferences: {
+      expectedCity: get('jobPreferences.expectedCity'),
+      availableFrom: get('jobPreferences.availableFrom'),
+      expectedSalary: get('jobPreferences.expectedSalary'),
+      internshipDuration: get('jobPreferences.internshipDuration'),
+    },
     education:  readCards('educationList', eduFields),
     experience: readCards('experienceList', expFields),
+    projects: readCards('projectList', projectFields),
+    awards: readCards('awardList', awardFields),
+    languages: readCards('languageList', languageFields),
     skills: skillsRaw ? skillsRaw.split(/[,，、]/).map(s => s.trim()).filter(Boolean) : [],
     links: {
       github: get('links.github'),

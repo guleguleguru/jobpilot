@@ -4,14 +4,22 @@
   "lastName": "张",
   "gender": "男",
   "birthday": "1999-01-15",
+  "graduationYear": "2021",
   "ethnicity": "汉族",
   "hometown": "上海市",
   "politicalStatus": "共青团员",
+  "documentType": "居民身份证",
   "idNumber": "",
   "phone": "13800138000",
   "email": "zhangsan@example.com",
   "address": "上海市浦东新区xxx路xxx号",
   "wechat": "zhangsan_wx",
+  "jobPreferences": {
+    "expectedCity": "上海",
+    "availableFrom": "两周内",
+    "expectedSalary": "面议",
+    "internshipDuration": "每周 4 天，持续 6 个月"
+  },
 
   "education": [
     {
@@ -31,6 +39,31 @@
       "startDate": "2020-07",
       "endDate": "2020-12",
       "description": "参与推荐系统开发，使用 Go 语言实现高性能数据处理服务，优化接口响应时间 30%。"
+    }
+  ],
+
+  "projects": [
+    {
+      "name": "JobPilot 智投助手",
+      "role": "独立开发",
+      "startDate": "2025-12",
+      "endDate": "2026-03",
+      "description": "开发 Chrome 扩展，实现招聘表单检测、AI 字段匹配、自动填写和 PDF 简历导入。"
+    }
+  ],
+
+  "awards": [
+    {
+      "name": "国家奖学金",
+      "issuer": "教育部",
+      "year": "2020"
+    }
+  ],
+
+  "languages": [
+    {
+      "name": "英语",
+      "level": "CET-6"
     }
   ],
 
