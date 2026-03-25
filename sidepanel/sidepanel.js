@@ -16,7 +16,7 @@ import {
 import { AIProvider, PROVIDER_PRESETS, checkOllamaRunning } from '../lib/ai-provider.js';
 import { loadPdfJs } from '../lib/pdfjs-loader.js';
 import {
-  extractPdfText, parseLocalRegex, buildAiParsePrompt,
+  extractPdfText, extractPdfContent, parseLocalRegex, buildAiParsePrompt,
   PROFILE_DISPLAY_FIELDS, getFieldValue, setFieldValue,
 } from '../lib/pdf-parser.js';
 
@@ -839,8 +839,8 @@ document.getElementById('btnLocalParse').addEventListener('click', async () => {
 
   try {
     const pdfjsLib = await loadPdfJs();
-    const text     = await extractPdfText(_pdfFile, pdfjsLib);
-    const parsed   = parseLocalRegex(text);
+    const content  = await extractPdfContent(_pdfFile, pdfjsLib);
+    const parsed   = parseLocalRegex(content.text, { links: content.links });
     showPdfPreview(parsed, '本地快速解析结果');
   } catch (e) {
     closePdfModal();
