@@ -19,16 +19,24 @@ const LABEL_RULES = [
   // ── 个人基本信息 ──
   { pattern: /(性别|gender|sex)/i,                                       key: 'gender' },
   { pattern: /(出生日期|生日|birth\s*day|date\s*of\s*birth|出生年月)/i,  key: 'birthday' },
+  { pattern: /(毕业年份|毕业年|届别|graduation\s*year|class\s*of)/i,      key: 'graduationYear' },
   { pattern: /(民族|ethnicity)/i,                                        key: 'ethnicity' },
   { pattern: /(籍贯|hometown|native\s*place|出生地)/i,                   key: 'hometown' },
   { pattern: /(政治面貌|political\s*status|party\s*member)/i,            key: 'politicalStatus' },
   { pattern: /(身份证\s*号?码?|id\s*card|id\s*number)/i,                 key: 'idNumber' },
+  { pattern: /(证件类型|证件类别|document\s*type|id\s*type)/i,           key: 'documentType' },
 
   // ── 联系方式 ──
   { pattern: /(手机\s*号?码?|电话\s*号?码?|mobile|phone|tel(?!linkedin)(?!ephone))/i, key: 'phone' },
   { pattern: /(邮\s*箱|e-?mail|电子邮件)/i,                             key: 'email' },
   { pattern: /(通讯地址|现居住地|详细地址|^地址$|^address$)/i,          key: 'address' },
   { pattern: /(微信\s*号?|wechat)/i,                                     key: 'wechat' },
+
+  // ── 求职偏好 ──
+  { pattern: /(期望城市|意向城市|工作城市|preferred\s*city|desired\s*location|location\s*preference)/i, key: 'jobPreferences.expectedCity' },
+  { pattern: /(到岗时间|最早到岗|可入职时间|available\s*(from|date)|start\s*working)/i,                key: 'jobPreferences.availableFrom' },
+  { pattern: /(期望薪资|薪资要求|薪酬要求|salary\s*expectation|expected\s*salary|compensation)/i,     key: 'jobPreferences.expectedSalary' },
+  { pattern: /(实习时长|实习周期|可实习多久|intern(ship)?\s*duration|duration)/i,                      key: 'jobPreferences.internshipDuration' },
 
   // ── 教育背景（使用 group/subkey，自动递增索引） ──
   { pattern: /(毕业院校|学校名称|就读学校|university|college|school\s*name|院校)/i, group: 'education', subkey: 'school' },
@@ -42,6 +50,16 @@ const LABEL_RULES = [
   { pattern: /(实习公司|工作单位|所在公司|company|employer|单位名称)/i,   group: 'experience', subkey: 'company' },
   { pattern: /(实习岗位|工作职位|担任职位|岗位名称|job\s*title|position|^职位$|^职称$)/i, group: 'experience', subkey: 'title' },
   { pattern: /(工作描述|岗位职责|工作内容|job\s*description|responsibilities)/i,         group: 'experience', subkey: 'description' },
+
+  // ── 项目经历 ──
+  { pattern: /(项目名称|项目经历|project\s*name)/i,                      group: 'projects', subkey: 'name' },
+  { pattern: /(项目角色|担任角色|project\s*role|role)/i,                 group: 'projects', subkey: 'role' },
+  { pattern: /(项目描述|项目介绍|project\s*description)/i,               group: 'projects', subkey: 'description' },
+
+  // ── 奖项与语言 ──
+  { pattern: /(奖项|荣誉|获奖名称|award|honor)/i,                        group: 'awards', subkey: 'name' },
+  { pattern: /(语言种类|语种|language)/i,                                group: 'languages', subkey: 'name' },
+  { pattern: /(语言水平|熟练程度|等级|proficiency|level)/i,              group: 'languages', subkey: 'level' },
 
   // ── 技能 ──
   { pattern: /(技能|专业技能|技术栈|skills|expertise)/i,                 key: 'skills' },
@@ -71,6 +89,23 @@ function getProfileValue(profile, keyPath) {
   return val;
 }
 
+function buildMatchText(field) {
+  const optionText = Array.isArray(field.options)
+    ? field.options.map(option => `${option.text} ${option.value}`).join(' ')
+    : '';
+
+  return [
+    field.label,
+    field.placeholder,
+    field.name,
+    field.title,
+    field.helperText,
+    field.sectionLabel,
+    field.contextText,
+    optionText,
+  ].filter(Boolean).join(' ');
+}
+
 // ── 单字段匹配 ────────────────────────────────────────────────
 
 /**
@@ -81,9 +116,7 @@ function getProfileValue(profile, keyPath) {
  * @returns {{ matched, key, value, isFile }}
  */
 function matchField(field, profile, counters) {
-  const matchText = [field.label, field.placeholder, field.name]
-    .filter(Boolean)
-    .join(' ');
+  const matchText = buildMatchText(field);
 
   for (const rule of LABEL_RULES) {
     if (!rule.pattern.test(matchText)) continue;
@@ -93,9 +126,9 @@ function matchField(field, profile, counters) {
     }
 
     let key;
-    if (rule.group === 'education' || rule.group === 'experience') {
+    if (rule.group) {
       // 取当前已见到该子键的次数作为数组索引
-      const grp = counters[rule.group];
+      const grp = counters[rule.group] = counters[rule.group] || {};
       const idx = grp[rule.subkey] || 0;
       grp[rule.subkey] = idx + 1;
       key = `${rule.group}[${idx}].${rule.subkey}`;
@@ -126,7 +159,7 @@ function matchForms(detectResult, profile) {
   const matched   = [];
   const unmatched = [];
   // 每次调用重置计数器：每类子键独立计数
-  const counters  = { education: {}, experience: {} };
+  const counters  = { education: {}, experience: {}, projects: {}, awards: {}, languages: {} };
 
   for (const form of detectResult.forms) {
     for (const field of form.fields) {

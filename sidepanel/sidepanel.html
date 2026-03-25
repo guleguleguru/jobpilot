@@ -120,6 +120,31 @@
       </div>
 
       <div class="form-section">
+        <h3 class="section-title">求职偏好</h3>
+        <div class="form-row two-col">
+          <div><label>期望城市</label><input type="text" name="jobPreferences.expectedCity" placeholder="上海"></div>
+          <div><label>最早到岗</label><input type="text" name="jobPreferences.availableFrom" placeholder="两周内 / 2026-06"></div>
+        </div>
+        <div class="form-row two-col">
+          <div><label>期望薪资</label><input type="text" name="jobPreferences.expectedSalary" placeholder="20k-25k x 14"></div>
+          <div><label>可实习时长</label><input type="text" name="jobPreferences.internshipDuration" placeholder="每周 4 天，连续 6 个月"></div>
+        </div>
+        <div class="form-row two-col">
+          <div><label>毕业年份</label><input type="text" name="graduationYear" placeholder="2026"></div>
+          <div>
+            <label>证件类型</label>
+            <select name="documentType">
+              <option value="">请选择</option>
+              <option value="居民身份证">居民身份证</option>
+              <option value="护照">护照</option>
+              <option value="港澳居民居住证">港澳居民居住证</option>
+              <option value="台湾居民居住证">台湾居民居住证</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
         <h3 class="section-title">教育背景</h3>
         <div id="educationList"></div>
         <button type="button" class="btn-add-entry" id="btnAddEducation">＋ 添加教育经历</button>
@@ -129,6 +154,21 @@
         <h3 class="section-title">实习/工作经历</h3>
         <div id="experienceList"></div>
         <button type="button" class="btn-add-entry" id="btnAddExperience">＋ 添加工作经历</button>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">项目经历</h3>
+        <div id="projectList"></div>
+        <button type="button" class="btn-add-entry" id="btnAddProject">＋ 添加项目经历</button>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">奖项与语言</h3>
+        <div id="awardList"></div>
+        <button type="button" class="btn-add-entry" id="btnAddAward">＋ 添加奖项</button>
+        <div style="height:12px"></div>
+        <div id="languageList"></div>
+        <button type="button" class="btn-add-entry" id="btnAddLanguage">＋ 添加语言能力</button>
       </div>
 
       <div class="form-section">
