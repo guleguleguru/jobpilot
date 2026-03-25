@@ -105,11 +105,19 @@ git clone <your-repo-url>
 - AI 请求只会发送给用户自己选择的模型服务商
 - 填写历史仅记录页面 URL 与统计数字，不记录完整填写内容
 
+更正式的隐私说明见 `PRIVACY.md`。
+
 ## 测试
 
 仓库包含本地测试页面：
 
 - `test/test-form.html`
+
+也提供了不依赖第三方库的 Node 原生单元测试：
+
+```bash
+npm test
+```
 
 修改代码后，在 `chrome://extensions` 页面点击刷新即可重新加载扩展。
 
