@@ -1,0 +1,87 @@
+name: Bug report
+description: Report a reproducible bug in JobPilot
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请尽量提供可复现信息。招聘网站和 ATS 的表单差异很大，缺少上下文通常无法定位问题。
+
+  - type: input
+    id: page_type
+    attributes:
+      label: Page / ATS
+      description: 站点名称或 ATS 名称
+      placeholder: 例如 Greenhouse / 牛客校招 / Workday
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Problem category
+      options:
+        - Form detection
+        - Basic field fill
+        - AI field fill
+        - Resume upload
+        - PDF import
+        - Sidepanel / Popup UI
+        - Settings / AI provider
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened
+      description: 描述实际行为和预期行为
+      placeholder: 例如检测到了字段，但点击一键填写后某些 select 没有填入
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. 打开某个页面
+        2. 打开侧边栏
+        3. 点击一键填写
+        4. 观察到...
+    validations:
+      required: true
+
+  - type: textarea
+    id: fields
+    attributes:
+      label: Field examples
+      description: 尽量提供字段 label / placeholder / options 示例，不要贴敏感个人信息
+      placeholder: |
+        label: 期望工作城市
+        placeholder: 请选择
+        options: 上海 / 北京 / 深圳
+
+  - type: dropdown
+    id: ai_enabled
+    attributes:
+      label: AI enabled
+      options:
+        - "Yes"
+        - "No"
+        - "Unknown"
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser version
+      placeholder: 例如 Chrome 134
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Extra context
+      description: 可补充截图说明、控制台错误、是否涉及 iframe 等
