@@ -55,7 +55,8 @@
     "activeTab",
     "storage",
     "scripting",
-    "sidePanel"
+    "sidePanel",
+    "webNavigation"
   ],
 
   "host_permissions": [
