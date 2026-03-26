@@ -22,10 +22,12 @@ import {
 
 // ── 全局状态 ─────────────────────────────────────────────────
 
-let detectedData   = null;
-let allMappings    = [];
-let profilesData   = {};      // { id: { name, data, createdAt } }
+let detectedData    = null;
+let allMappings     = [];
+let profilesData    = {};      // { id: { name, data, createdAt } }
 let activeProfileId = '';
+let fillInProgress   = false;  // 填写流程中，阻止并发检测和 formsUpdated 打断
+let detectInProgress = false;  // 检测流程中，阻止并发触发
 
 // ── 工具函数 ──────────────────────────────────────────────────
 
@@ -79,6 +81,9 @@ function setDetectInfo(html, loading = false) {
 }
 
 async function detectForms() {
+  if (detectInProgress) return;
+  detectInProgress = true;
+
   setDetectInfo('正在检测表单...', true);
   btnFillMain.disabled = true;
   detectedData = null;
@@ -87,7 +92,9 @@ async function detectForms() {
   emptyHint.style.display   = 'none';
 
   try {
-    const resp = await sendToContent('detectForms');
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) throw new Error('无法获取当前标签页');
+    const resp = await chrome.runtime.sendMessage({ action: 'detectAllFrames', tabId: tab.id });
     if (!resp?.success || resp.data.totalFields === 0) {
       setDetectInfo('当前页面未检测到表单字段');
       emptyHint.style.display = 'block';
@@ -100,6 +107,8 @@ async function detectForms() {
   } catch {
     setDetectInfo('无法连接到页面（请刷新后重试）');
     emptyHint.style.display = 'block';
+  } finally {
+    detectInProgress = false;
   }
 }
 
@@ -135,6 +144,7 @@ async function showFillPreview() {
 // 一键填写
 btnFillMain.addEventListener('click', async () => {
   if (!detectedData) return;
+  fillInProgress = true;
   btnFillMain.disabled = true;
   btnFillMain.textContent = '填写中...';
   fillResults.style.display = 'none';
@@ -194,9 +204,13 @@ btnFillMain.addEventListener('click', async () => {
       }
     }
 
-    // 阶段 3: 填写
+    // 阶段 3: 填写（按帧路由，支持跨域 iframe）
     setDetectInfo('填写表单...', true);
-    const fillResp = await sendToContent('fillForms', { mappings: allMappings });
+    const [fillTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const fillResp = await chrome.runtime.sendMessage({
+      action: 'fillAllFrames',
+      payload: { tabId: fillTab.id, allMappings },
+    });
     if (!fillResp?.success) throw new Error(fillResp?.error || '填写失败');
 
     const { results, summary } = fillResp.data;
@@ -210,7 +224,7 @@ btnFillMain.addEventListener('click', async () => {
     await renderResults(enriched, summary, aiMeta, settings.confidenceThreshold);
     showToast(`填写完成：${summary.filled} 个成功`, 'success');
 
-    // 保存历史
+    // 保存历史（含 leanMappings 以便回填）
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     chrome.runtime.sendMessage({
       action: 'saveHistory',
@@ -219,12 +233,16 @@ btnFillMain.addEventListener('click', async () => {
         fieldsCount: summary.total, successCount: summary.filled,
         failCount: summary.errors,
         aiCount: enriched.filter(r => r.source === 'ai' && r.status === 'filled').length,
+        leanMappings: allMappings
+          .filter(m => m.value && !m.isFile)
+          .map(({ field, value, source, confidence }) => ({ field, value, source, confidence })),
       },
     });
   } catch (e) {
     setDetectInfo(`检测到 <strong style="color:#2563eb">${detectedData?.totalFields ?? 0}</strong> 个表单字段`);
     showToast(`填写出错：${e.message}`, 'error');
   } finally {
+    fillInProgress = false;
     btnFillMain.disabled = false;
     btnFillMain.textContent = '一键填写';
   }
@@ -294,7 +312,12 @@ resultsList.addEventListener('click', async (e) => {
   const li = e.target.closest('.result-item[data-field-id]');
   if (li) {
     const m = allMappings.find(x => x.field.id === li.dataset.fieldId);
-    if (m?.field) sendToContent('highlightField', { field: m.field }).catch(() => {});
+    if (m?.field) {
+      const fid = m.field.frameId ?? 0;
+      chrome.tabs.query({ active: true, currentWindow: true }).then(([t]) => {
+        if (t) chrome.tabs.sendMessage(t.id, { action: 'highlightField', field: m.field }, { frameId: fid }).catch(() => {});
+      });
+    }
   }
 });
 
@@ -1047,11 +1070,14 @@ async function renderHistory() {
   const history = await getHistory();
   if (!history.length) { list.innerHTML = '<p class="history-empty">暂无记录</p>'; return; }
 
-  list.innerHTML = history.map(h => {
+  list.innerHTML = history.map((h, i) => {
     const d  = new Date(h.timestamp);
     const ts = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
     let urlShort = h.url || '';
     try { urlShort = new URL(h.url).hostname + new URL(h.url).pathname; } catch (_) {}
+    const replayBtn = h.leanMappings?.length > 0
+      ? `<button class="btn-sm btn-replay-history" data-ts="${h.timestamp}" style="margin-left:auto;flex-shrink:0">↺ 回填</button>`
+      : '';
     return `<div class="history-item">
       <div class="history-item-url" title="${escapeHtml(h.url||'')}">${escapeHtml(urlShort)}</div>
       <div class="history-item-meta">
@@ -1059,6 +1085,7 @@ async function renderHistory() {
         <span class="history-stat ok">✅ ${h.successCount}</span>
         ${h.failCount > 0 ? `<span class="history-stat err">❌ ${h.failCount}</span>` : ''}
         ${h.aiCount  > 0 ? `<span class="history-stat">🤖 ${h.aiCount}</span>`       : ''}
+        ${replayBtn}
       </div>
     </div>`;
   }).join('');
@@ -1068,6 +1095,53 @@ document.getElementById('btnClearHistory').addEventListener('click', async () =>
   await clearHistory();
   await renderHistory();
   showToast('历史已清除');
+});
+
+// ── 监听 content script 推送的表单更新（SPA 路由后自动重检） ────
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action !== 'formsUpdated') return;
+  if (fillInProgress || detectInProgress) return;
+  detectForms();
+});
+
+// ── 历史记录回填 ──────────────────────────────────────────────
+document.getElementById('historyList').addEventListener('click', async (e) => {
+  const btn = e.target.closest('.btn-replay-history');
+  if (!btn) return;
+
+  const ts   = parseInt(btn.dataset.ts, 10);
+  const hist = await getHistory();
+  const entry = hist.find(h => h.timestamp === ts);
+  if (!entry?.leanMappings?.length) { showToast('该记录无回填数据', ''); return; }
+
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  // 跨域不阻止，但给出提示
+  try {
+    if (tab?.url && entry.url && new URL(tab.url).origin !== new URL(entry.url).origin) {
+      showToast('当前域名与记录不符，回填可能失败', '');
+    }
+  } catch {}
+
+  btn.disabled    = true;
+  btn.textContent = '回填中...';
+  try {
+    const fillResp = await chrome.runtime.sendMessage({
+      action:  'fillAllFrames',
+      payload: { tabId: tab.id, allMappings: entry.leanMappings },
+    });
+    if (fillResp?.success) {
+      const { filled, skipped } = fillResp.data.summary;
+      showToast(`回填完成：${filled} 个成功，${skipped} 个跳过`, 'success');
+      document.querySelector('[data-tab="fill"]').click();
+    } else {
+      showToast('回填失败', 'error');
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '↺ 回填';
+  }
 });
 
 // ════════════════════════════════════════════════════════════

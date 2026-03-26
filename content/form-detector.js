@@ -399,3 +399,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // 暴露到 window 供调试
 window.__jobpilotDetectForms = detectForms;
+
+// ── MutationObserver：监听 SPA 路由后新增的表单字段 ────────────
+// 检测到 input/select/textarea 被添加到 DOM 后，通知侧边栏重新检测。
+// 延迟 2 秒启动，避免页面初始加载时的大量 mutation 触发误检。
+(function setupFormObserver() {
+  const FORM_TAGS   = new Set(['FORM', 'INPUT', 'SELECT', 'TEXTAREA']);
+  let _debounceTimer = null;
+
+  const observer = new MutationObserver((mutations) => {
+    const hasFormChange = mutations.some(m =>
+      Array.from(m.addedNodes).some(n =>
+        n.nodeType === 1 && (
+          FORM_TAGS.has(n.tagName) ||
+          (n.querySelector && n.querySelector('input, select, textarea'))
+        )
+      )
+    );
+    if (!hasFormChange) return;
+
+    clearTimeout(_debounceTimer);
+    _debounceTimer = setTimeout(() => {
+      chrome.runtime.sendMessage({ action: 'formsUpdated' }).catch(() => {});
+    }, 600);
+  });
+
+  setTimeout(() => {
+    if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+  }, 2000);
+})();
