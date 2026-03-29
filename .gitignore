@@ -17,3 +17,11 @@ Thumbs.db
 *.log
 *.tmp
 *.zip
+
+# Local debug artifacts
+jobpilot-debug-*.json
+jobpilot_upgrade_prompt.md
+/太平/
+
+# Personal local files
+*简历*.pdf

@@ -6,6 +6,27 @@
 
 // 忽略的 input 类型
 const IGNORED_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image', 'password']);
+const FIELD_NODE_SELECTOR = 'input, select, textarea, button, option, [role="button"], [role="combobox"]';
+const FIELD_CONTAINER_SELECTOR = '.form-row, .form-group, .field, .input-group, .question, li, td, tr, .entry-card, .ant-form-item, .el-form-item, .layui-form-item, .ivu-form-item, .row, .col, .ant-col, .el-col';
+const LABEL_ELEMENT_SELECTOR = [
+  'label',
+  '.el-form-item__label',
+  '.ant-form-item-label',
+  '.ivu-form-item-label',
+  '.layui-form-label',
+  '[class*="label"]',
+  '[class*="Label"]',
+  '[class*="title"]',
+  '[class*="Title"]',
+  '[data-label]',
+  'span',
+  'div',
+].join(', ');
+const LABEL_NOISE_PATTERNS = [
+  /^(请输入|请选择|请填写|点击选择|点击上传|上传文件|上传附件|搜索|请选择日期)/,
+  /^(select|search|choose|upload)$/i,
+  /^[*：:（）()\-\s]+$/,
+];
 
 function normalizeText(text, maxLen = 180) {
   return String(text || '')
@@ -17,8 +38,160 @@ function normalizeText(text, maxLen = 180) {
 function cloneTextWithoutFields(node) {
   if (!node) return '';
   const clone = node.cloneNode(true);
-  clone.querySelectorAll('input, select, textarea, button, option').forEach(el => el.remove());
+  clone.querySelectorAll(FIELD_NODE_SELECTOR).forEach(el => el.remove());
   return normalizeText(clone.textContent || '');
+}
+
+function cleanLabelText(text, maxLen = 80) {
+  return normalizeText(text || '', maxLen)
+    .replace(/^[*＊\s]+/, '')
+    .replace(/\s*[:：]\s*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isMeaningfulLabelText(text) {
+  const value = cleanLabelText(text);
+  if (!value || value.length > 40) return false;
+  if (LABEL_NOISE_PATTERNS.some(pattern => pattern.test(value))) return false;
+  return /[\u4e00-\u9fa5A-Za-z]/.test(value);
+}
+
+function uniqueTexts(items) {
+  return [...new Set(
+    (items || [])
+      .map(item => cleanLabelText(item))
+      .filter(isMeaningfulLabelText)
+  )];
+}
+
+function nodeContainsField(node, el) {
+  return Boolean(node && (node === el || node.contains?.(el)));
+}
+
+function nodeHasFieldControls(node) {
+  return Boolean(node?.querySelector?.(FIELD_NODE_SELECTOR));
+}
+
+function hasVisibleAncestor(node, maxDepth = 5) {
+  let current = node?.parentElement || null;
+  let depth = 0;
+  while (current && depth < maxDepth) {
+    const style = window.getComputedStyle(current);
+    if (style.display !== 'none' && style.visibility !== 'hidden' && (current.offsetWidth > 0 || current.offsetHeight > 0)) {
+      return true;
+    }
+    current = current.parentElement;
+    depth += 1;
+  }
+  return false;
+}
+
+function collectPreviousSiblingTexts(el, limit = 3) {
+  const results = [];
+  let prev = el.previousElementSibling;
+  let guard = 0;
+  while (prev && guard < limit) {
+    const text = cleanLabelText(cloneTextWithoutFields(prev));
+    if (isMeaningfulLabelText(text)) results.push(text);
+    prev = prev.previousElementSibling;
+    guard += 1;
+  }
+  return results;
+}
+
+function collectParentTextNodes(el) {
+  const results = [];
+  const parent = el.parentElement;
+  if (!parent) return results;
+
+  for (const node of parent.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = cleanLabelText(node.textContent || '');
+      if (isMeaningfulLabelText(text)) results.push(text);
+    }
+  }
+  return results;
+}
+
+function collectContainerLabelTexts(el) {
+  const containers = [];
+  const direct = findFieldContainer(el);
+  if (direct) containers.push(direct);
+
+  const rowContainer = el.closest('.el-row, .ant-row, .row, tr, li, .grid, .flex');
+  if (rowContainer && !containers.includes(rowContainer)) containers.push(rowContainer);
+
+  const results = [];
+  for (const container of containers) {
+    const fieldRect = el.getBoundingClientRect();
+    const fieldCenterY = (fieldRect.top + fieldRect.bottom) / 2;
+
+    const nodes = Array.from(container.querySelectorAll(LABEL_ELEMENT_SELECTOR))
+      .filter(node =>
+        node instanceof Element &&
+        !nodeContainsField(node, el) &&
+        !nodeHasFieldControls(node)
+      )
+      .map(node => {
+        const text = cleanLabelText(cloneTextWithoutFields(node));
+        if (!isMeaningfulLabelText(text)) return null;
+
+        const rect = node.getBoundingClientRect();
+        if (!rect.width && !rect.height) return null;
+
+        const nodeCenterY = (rect.top + rect.bottom) / 2;
+        const verticalGap = Math.abs(nodeCenterY - fieldCenterY);
+        const leftGap = fieldRect.left - rect.right;
+        const aboveGap = fieldRect.top - rect.bottom;
+        const alignedLeft = leftGap >= -8 && leftGap <= 240 && verticalGap <= 36;
+        const alignedAbove = aboveGap >= -8 && aboveGap <= 28 && Math.abs(rect.left - fieldRect.left) <= 80;
+        if (!alignedLeft && !alignedAbove) return null;
+
+        return {
+          text,
+          score: alignedLeft
+            ? leftGap + verticalGap
+            : 60 + Math.max(0, aboveGap) + Math.abs(rect.left - fieldRect.left),
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.score - b.score);
+
+    results.push(...nodes.map(item => item.text));
+  }
+
+  return results;
+}
+
+function extractLabelCandidates(el, doc) {
+  const candidates = [];
+
+  if (el.id) {
+    const label = doc.querySelector(`label[for="${el.id}"]`);
+    if (label) candidates.push(label.textContent);
+  }
+
+  candidates.push(el.getAttribute('aria-label') || '');
+
+  const labelledBy = el.getAttribute('aria-labelledby');
+  if (labelledBy) {
+    for (const id of labelledBy.split(/\s+/)) {
+      const labelEl = doc.getElementById(id);
+      if (labelEl) candidates.push(labelEl.textContent);
+    }
+  }
+
+  const parentLabel = el.closest('label');
+  if (parentLabel) candidates.push(cloneTextWithoutFields(parentLabel));
+
+  candidates.push(...collectPreviousSiblingTexts(el));
+  candidates.push(...collectParentTextNodes(el));
+  candidates.push(...collectContainerLabelTexts(el));
+  candidates.push(el.title || '');
+  candidates.push(el.placeholder || '');
+
+  return uniqueTexts(candidates);
 }
 
 /**
@@ -187,6 +360,10 @@ function extractContextText(el) {
   return normalizeText(fragments.join(' '), 180);
 }
 
+function findFieldContainer(el) {
+  return el.closest(FIELD_CONTAINER_SELECTOR);
+}
+
 /**
  * 提取 select/radio 的选项列表
  * @param {Element} el
@@ -218,7 +395,7 @@ function extractOptions(el, doc) {
  * @param {number} fieldIndex
  * @returns {object|null}
  */
-function describeField(el, doc, formId, fieldIndex) {
+function describeField(el, doc, formId, fieldIndex, adapter = null) {
   const tag = el.tagName.toLowerCase();
   let type = 'text';
 
@@ -231,15 +408,20 @@ function describeField(el, doc, formId, fieldIndex) {
     type = 'select';
   }
 
-  // 跳过不可见元素（display:none / visibility:hidden）
+  // 跳过不可见元素（display:none / visibility:hidden）。
+  // 某些 ATS 会把 radio/checkbox input 隐藏，只保留外层可见壳子，这里保留这类控件。
   const style = window.getComputedStyle(el);
-  if (style.display === 'none' || style.visibility === 'hidden') return null;
+  if (style.display === 'none' || style.visibility === 'hidden') {
+    if (!['radio', 'checkbox'].includes(type) || !hasVisibleAncestor(el)) return null;
+  }
 
-  const label = extractLabel(el, doc);
+  const labelCandidates = extractLabelCandidates(el, doc);
+  const label = labelCandidates[0] || extractLabel(el, doc);
   const options = extractOptions(el, doc);
   const helperText = extractHelperText(el);
   const sectionLabel = extractSectionLabel(el);
   const contextText = extractContextText(el);
+  const container = findFieldContainer(el);
 
   // radio 字段只记录第一个，避免重复
   if (type === 'radio') {
@@ -248,11 +430,12 @@ function describeField(el, doc, formId, fieldIndex) {
     seen.add(el.name);
   }
 
-  return {
+  const descriptor = {
     id: `${formId}_field_${fieldIndex}`,
     name: el.name || el.id || '',
     type,
     label,
+    labelCandidates,
     placeholder: el.placeholder || '',
     title: el.title || '',
     required: el.required || el.getAttribute('aria-required') === 'true',
@@ -260,10 +443,40 @@ function describeField(el, doc, formId, fieldIndex) {
     helperText,
     sectionLabel,
     contextText,
+    containerText: normalizeText(container?.textContent || '', 180),
     value: el.value || '',
     xpath: buildXPath(el),
     selector: buildSelector(el, doc),
+    containerSelector: container ? buildSelector(container, doc) : '',
   };
+
+  const patch = adapter?.enrichFieldDescriptor?.({
+    element: el,
+    field: descriptor,
+    doc,
+    helpers: {
+      cleanLabelText,
+      cloneTextWithoutFields,
+      extractLabelCandidates,
+      findFieldContainer,
+      isMeaningfulLabelText,
+      normalizeText,
+      uniqueTexts,
+    },
+  });
+
+  if (patch && typeof patch === 'object') {
+    if (Array.isArray(patch.labelCandidates)) {
+      descriptor.labelCandidates = uniqueTexts([...(descriptor.labelCandidates || []), ...patch.labelCandidates]);
+    }
+    for (const [key, value] of Object.entries(patch)) {
+      if (key === 'labelCandidates') continue;
+      descriptor[key] = value;
+    }
+    descriptor.label = cleanLabelText(descriptor.label) || descriptor.labelCandidates?.[0] || descriptor.label;
+  }
+
+  return descriptor;
 }
 
 /**
@@ -276,6 +489,10 @@ function describeField(el, doc, formId, fieldIndex) {
 function scanDocument(doc, source = 'main', iframePath = '') {
   const forms = [];
   let formIndex = 0;
+  const adapter = window.__jobpilotGetSiteAdapter?.({
+    document: doc,
+    location: doc.defaultView?.location || window.location,
+  }) || null;
 
   // 重置 radio 去重记录
   delete doc._jobpilotSeenRadios;
@@ -295,7 +512,7 @@ function scanDocument(doc, source = 'main', iframePath = '') {
 
     const inputs = form.querySelectorAll('input, textarea, select');
     for (const el of inputs) {
-      const field = describeField(el, doc, formId, fieldIndex);
+      const field = describeField(el, doc, formId, fieldIndex, adapter);
       if (field) {
         field.source = source;
         field.iframePath = iframePath;
@@ -322,7 +539,7 @@ function scanDocument(doc, source = 'main', iframePath = '') {
     const fields = [];
     let fieldIndex = 0;
     for (const el of standaloneFields) {
-      const field = describeField(el, doc, formId, fieldIndex);
+      const field = describeField(el, doc, formId, fieldIndex, adapter);
       if (field) {
         field.source = source;
         field.iframePath = iframePath;
@@ -405,6 +622,7 @@ window.__jobpilotDetectForms = detectForms;
 // 延迟 2 秒启动，避免页面初始加载时的大量 mutation 触发误检。
 (function setupFormObserver() {
   const FORM_TAGS   = new Set(['FORM', 'INPUT', 'SELECT', 'TEXTAREA']);
+  const OBSERVED_SELECTOR = 'input, select, textarea, [role="combobox"], [role="textbox"], [contenteditable="true"]';
   let _debounceTimer = null;
 
   const observer = new MutationObserver((mutations) => {
@@ -412,7 +630,8 @@ window.__jobpilotDetectForms = detectForms;
       Array.from(m.addedNodes).some(n =>
         n.nodeType === 1 && (
           FORM_TAGS.has(n.tagName) ||
-          (n.querySelector && n.querySelector('input, select, textarea'))
+          n.matches?.(OBSERVED_SELECTOR) ||
+          (n.querySelector && n.querySelector(OBSERVED_SELECTOR))
         )
       )
     );
@@ -424,7 +643,23 @@ window.__jobpilotDetectForms = detectForms;
     }, 600);
   });
 
-  setTimeout(() => {
-    if (document.body) observer.observe(document.body, { childList: true, subtree: true });
-  }, 2000);
+  function startObserver() {
+    if (!document.body) return false;
+    observer.observe(document.body, { childList: true, subtree: true });
+    return true;
+  }
+
+  if (!startObserver()) {
+    const bootObserver = new MutationObserver(() => {
+      if (!startObserver()) return;
+      bootObserver.disconnect();
+    });
+    bootObserver.observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  [400, 1200, 2500].forEach(delay => {
+    setTimeout(() => {
+      chrome.runtime.sendMessage({ action: 'formsUpdated' }).catch(() => {});
+    }, delay);
+  });
 })();

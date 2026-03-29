@@ -7,151 +7,151 @@
   <link rel="stylesheet" href="sidepanel.css">
 </head>
 <body>
-
-  <!-- 顶部标题栏 -->
   <header class="sp-header">
     <span class="sp-logo">JP</span>
-    <h1>JobPilot <span>智投助手</span></h1>
+    <h1>JobPilot <span>ATS Autofill</span></h1>
   </header>
 
-  <!-- Tab 导航 -->
   <nav class="sp-tabs">
-    <button class="tab-btn active" data-tab="fill">填写</button>
+    <button class="tab-btn active" data-tab="fill">填表</button>
     <button class="tab-btn" data-tab="profile">资料</button>
     <button class="tab-btn" data-tab="settings">设置</button>
   </nav>
 
-  <!-- ── Tab 1: 填写 ── -->
   <section class="tab-content active" id="tab-fill">
     <div class="fill-header">
-      <div class="detect-info" id="detectInfo">
-        <span class="spinner-sm"></span> 正在检测表单...
-      </div>
-      <button class="btn-detect" id="btnDetect" title="重新检测">↺</button>
+      <div class="detect-info" id="detectInfo"><span class="spinner-sm"></span> 正在检测表单...</div>
+      <button class="btn-detect" id="btnDetect" title="重新检测">↻</button>
     </div>
 
     <div class="fill-preview" id="fillPreview" style="display:none"></div>
+    <div class="fill-diagnostics" id="fillDiagnostics" style="display:none"></div>
 
-    <button class="btn-fill-main" id="btnFillMain" disabled>一键填写</button>
+    <button class="btn-fill-main" id="btnFillMain" disabled>一键填表</button>
 
     <div class="fill-results" id="fillResults" style="display:none">
       <div class="results-header">
         <div class="results-summary" id="resultsSummary"></div>
-        <button class="btn-refill" id="btnRefill">↺ 重新填写</button>
+        <button class="btn-refill" id="btnRefill">↻ 重新填表</button>
       </div>
       <ul class="results-list" id="resultsList"></ul>
     </div>
 
     <div class="empty-hint" id="emptyHint">
-      在招聘页面点击「一键填写」，即可自动填写表单字段
+      在招聘页面点击“一键填表”，自动填入可用资料并提示缺失项
       <div class="shortcut-hint">快捷键：<kbd>Alt+J</kbd></div>
     </div>
   </section>
 
-  <!-- ── Tab 2: 资料 ── -->
   <section class="tab-content" id="tab-profile">
-
-    <!-- Module C: 多模板选择器 -->
     <div class="profile-selector-area">
       <select id="profileSelect" class="profile-select"></select>
-      <button class="btn-icon" id="btnNewProfile"       title="新建模板">＋</button>
-      <button class="btn-icon" id="btnDuplicateProfile" title="复制当前">⊕</button>
-      <button class="btn-icon btn-icon-danger" id="btnDeleteProfile" title="删除当前">✕</button>
+      <button class="btn-icon" id="btnNewProfile" title="新建模板">+</button>
+      <button class="btn-icon" id="btnDuplicateProfile" title="复制当前">⧉</button>
+      <button class="btn-icon btn-icon-danger" id="btnDeleteProfile" title="删除当前">×</button>
     </div>
 
-    <!-- 工具栏：PDF 导入 + JSON 导入/导出 -->
     <div class="profile-toolbar">
       <button class="btn-sm btn-accent" id="btnPdfImport">从 PDF 导入</button>
       <button class="btn-sm" id="btnImportProfile">导入 JSON</button>
       <button class="btn-sm" id="btnExportProfile">导出 JSON</button>
       <input type="file" id="importFileInput" accept=".json" style="display:none">
-      <input type="file" id="pdfFileInput"    accept=".pdf"  style="display:none">
+      <input type="file" id="pdfFileInput" accept=".pdf" style="display:none">
     </div>
 
     <form class="profile-form" id="profileForm">
-
       <div class="form-section">
-        <h3 class="section-title">基本信息</h3>
-        <div class="form-row">
-          <label>姓名</label>
-          <input type="text" name="name" placeholder="张三">
+        <h3 class="section-title">基础信息</h3>
+        <div class="form-row"><label>姓名</label><input type="text" name="name" placeholder="张三"></div>
+        <div class="form-row two-col">
+          <div><label>姓</label><input type="text" name="lastName" placeholder="张"></div>
+          <div><label>名</label><input type="text" name="firstName" placeholder="三"></div>
         </div>
         <div class="form-row two-col">
-          <div><label>姓（lastName）</label><input type="text" name="lastName" placeholder="张"></div>
-          <div><label>名（firstName）</label><input type="text" name="firstName" placeholder="三"></div>
+          <div><label>姓名拼音</label><input type="text" name="personal.fullNamePinyin" placeholder="Zhang San"></div>
+          <div><label>英文名</label><input type="text" name="personal.englishName" placeholder="Alex Zhang"></div>
         </div>
         <div class="form-row two-col">
-          <div>
-            <label>性别</label>
-            <select name="gender">
-              <option value="">请选择</option>
-              <option value="男">男</option>
-              <option value="女">女</option>
-            </select>
-          </div>
+          <div><label>性别</label><select name="gender"><option value=""></option><option value="男">男</option><option value="女">女</option></select></div>
+          <div></div>
+        </div>
+        <div class="form-row two-col">
           <div><label>出生日期</label><input type="date" name="birthday"></div>
+          <div><label>年龄</label><input type="number" name="personal.age" min="0"></div>
         </div>
         <div class="form-row two-col">
+          <div><label>国籍</label><input type="text" name="personal.nationality" placeholder="中国"></div>
           <div><label>民族</label><input type="text" name="ethnicity" placeholder="汉族"></div>
-          <div><label>籍贯</label><input type="text" name="hometown" placeholder="上海市"></div>
         </div>
         <div class="form-row two-col">
-          <div>
-            <label>政治面貌</label>
-            <select name="politicalStatus">
-              <option value="">请选择</option>
-              <option value="中共党员">中共党员</option>
-              <option value="中共预备党员">中共预备党员</option>
-              <option value="共青团员">共青团员</option>
-              <option value="民主党派">民主党派</option>
-              <option value="群众">群众</option>
-            </select>
-          </div>
-          <div><label>身份证号</label><input type="text" name="idNumber" placeholder="（可不填）"></div>
+          <div><label>籍贯</label><input type="text" name="hometown" placeholder="上海"></div>
+          <div><label>政治面貌</label><input type="text" name="politicalStatus" placeholder="共青团员"></div>
+        </div>
+        <div class="form-row two-col">
+          <div><label>入党时间</label><input type="text" name="personal.partyJoinDate" placeholder="YYYY-MM"></div>
+          <div><label>应届/往届状态</label><input type="text" name="personal.freshGraduateStatus" placeholder="2026届应届生"></div>
         </div>
       </div>
 
       <div class="form-section">
-        <h3 class="section-title">联系方式</h3>
+        <h3 class="section-title">证件与联系方式</h3>
+        <div class="form-row two-col">
+          <div><label>证件类型</label><input type="text" name="documentType" placeholder="居民身份证"></div>
+          <div><label>证件号码</label><input type="text" name="idNumber" placeholder="仅手动保存"></div>
+        </div>
         <div class="form-row"><label>手机号</label><input type="tel" name="phone" placeholder="138XXXXXXXX"></div>
         <div class="form-row"><label>邮箱</label><input type="email" name="email" placeholder="name@example.com"></div>
-        <div class="form-row"><label>地址</label><input type="text" name="address" placeholder="上海市浦东新区..."></div>
-        <div class="form-row"><label>微信号</label><input type="text" name="wechat" placeholder="wechat_id"></div>
+        <div class="form-row"><label>通讯地址</label><input type="text" name="address" placeholder="上海市浦东新区..."></div>
+        <div class="form-row two-col">
+          <div><label>微信号</label><input type="text" name="wechat" placeholder="wechat_id"></div>
+          <div><label>固定电话</label><input type="text" name="contact.landline" placeholder="021-xxxxxxx"></div>
+        </div>
+        <div class="form-row two-col">
+          <div><label>邮编</label><input type="text" name="contact.postalCode" placeholder="200120"></div>
+          <div><label>紧急联系人</label><input type="text" name="contact.emergencyContactName" placeholder="父亲"></div>
+        </div>
+        <div class="form-row"><label>紧急联系人电话</label><input type="text" name="contact.emergencyContactPhone" placeholder="138XXXXXXXX"></div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">居住与户籍</h3>
+        <div class="form-row two-col">
+          <div><label>现居城市</label><input type="text" name="residency.currentCity" placeholder="上海"></div>
+          <div><label>现住址</label><input type="text" name="residency.currentAddress" placeholder="当前常住地址"></div>
+        </div>
+        <div class="form-row"><label>家庭地址</label><input type="text" name="residency.homeAddress" placeholder="家庭地址"></div>
+        <div class="form-row two-col">
+          <div><label>户口性质</label><input type="text" name="residency.householdType" placeholder="城镇 / 农村"></div>
+          <div><label>户籍地址</label><input type="text" name="residency.householdAddress" placeholder="户口所在地"></div>
+        </div>
+        <div class="form-row"><label>户口所在地派出所</label><input type="text" name="residency.policeStation" placeholder="派出所名称"></div>
       </div>
 
       <div class="form-section">
         <h3 class="section-title">求职偏好</h3>
         <div class="form-row two-col">
-          <div><label>期望城市</label><input type="text" name="jobPreferences.expectedCity" placeholder="上海"></div>
-          <div><label>最早到岗</label><input type="text" name="jobPreferences.availableFrom" placeholder="两周内 / 2026-06"></div>
+          <div><label>期望城市</label><input type="text" name="jobPreferences.expectedCity" placeholder="上海, 深圳"></div>
+          <div><label>期望岗位</label><input type="text" name="jobPreferences.expectedPositions" placeholder="后端工程师, 数据工程师"></div>
+        </div>
+        <div class="form-row two-col">
+          <div><label>到岗时间</label><input type="text" name="jobPreferences.availableFrom" placeholder="两周内"></div>
+          <div><label>求职状态</label><input type="text" name="jobPreferences.jobStatus" placeholder="积极求职"></div>
         </div>
         <div class="form-row two-col">
           <div><label>期望薪资</label><input type="text" name="jobPreferences.expectedSalary" placeholder="20k-25k x 14"></div>
-          <div><label>可实习时长</label><input type="text" name="jobPreferences.internshipDuration" placeholder="每周 4 天，连续 6 个月"></div>
+          <div><label>可实习时长</label><input type="text" name="jobPreferences.internshipDuration" placeholder="每周 4 天，持续 6 个月"></div>
         </div>
-        <div class="form-row two-col">
-          <div><label>毕业年份</label><input type="text" name="graduationYear" placeholder="2026"></div>
-          <div>
-            <label>证件类型</label>
-            <select name="documentType">
-              <option value="">请选择</option>
-              <option value="居民身份证">居民身份证</option>
-              <option value="护照">护照</option>
-              <option value="港澳居民居住证">港澳居民居住证</option>
-              <option value="台湾居民居住证">台湾居民居住证</option>
-            </select>
-          </div>
-        </div>
+        <div class="form-row"><label>毕业年份</label><input type="text" name="graduationYear" placeholder="2026"></div>
       </div>
 
       <div class="form-section">
-        <h3 class="section-title">教育背景</h3>
+        <h3 class="section-title">教育经历</h3>
         <div id="educationList"></div>
         <button type="button" class="btn-add-entry" id="btnAddEducation">＋ 添加教育经历</button>
       </div>
 
       <div class="form-section">
-        <h3 class="section-title">实习/工作经历</h3>
+        <h3 class="section-title">工作 / 实习经历</h3>
         <div id="experienceList"></div>
         <button type="button" class="btn-add-entry" id="btnAddExperience">＋ 添加工作经历</button>
       </div>
@@ -172,8 +172,14 @@
       </div>
 
       <div class="form-section">
+        <h3 class="section-title">家庭成员</h3>
+        <div id="familyList"></div>
+        <button type="button" class="btn-add-entry" id="btnAddFamily">＋ 添加家庭成员</button>
+      </div>
+
+      <div class="form-section">
         <h3 class="section-title">技能与链接</h3>
-        <div class="form-row"><label>技能（逗号分隔）</label><input type="text" name="skills" placeholder="Python, JavaScript, React"></div>
+        <div class="form-row"><label>技能</label><input type="text" name="skills" placeholder="Python, JavaScript, React"></div>
         <div class="form-row"><label>GitHub</label><input type="url" name="links.github" placeholder="https://github.com/..."></div>
         <div class="form-row"><label>LinkedIn</label><input type="url" name="links.linkedin" placeholder="https://linkedin.com/in/..."></div>
         <div class="form-row"><label>个人网站</label><input type="url" name="links.website" placeholder="https://..."></div>
@@ -181,9 +187,7 @@
 
       <div class="form-section">
         <h3 class="section-title">自我介绍</h3>
-        <div class="form-row">
-          <textarea name="selfIntro" rows="4" placeholder="简要描述你的背景、技能和求职目标..."></textarea>
-        </div>
+        <div class="form-row"><textarea name="selfIntro" rows="4" placeholder="简要描述你的背景、技能和求职目标..."></textarea></div>
       </div>
 
       <div class="form-section">
@@ -201,13 +205,10 @@
     </form>
   </section>
 
-  <!-- ── Tab 3: 设置 ── -->
   <section class="tab-content" id="tab-settings">
     <form class="settings-form" id="settingsForm">
-
       <div class="form-section">
         <h3 class="section-title">AI 模型</h3>
-
         <div class="form-row">
           <label>服务商</label>
           <select name="provider" id="providerSelect">
@@ -220,13 +221,9 @@
             <option value="ollama">本地 Ollama</option>
           </select>
         </div>
-
-        <!-- Ollama 提示（仅 Ollama 时显示） -->
         <div class="form-row ollama-hint" id="ollamaHint" style="display:none">
-          <p class="hint">Ollama 需在本地运行。启动命令：<code>ollama serve</code><br>
-          模型下载示例：<code>ollama pull qwen2.5:7b</code></p>
+          <p class="hint">Ollama 需要本地运行：<code>ollama serve</code>。示例模型：<code>ollama pull qwen2.5:7b</code></p>
         </div>
-
         <div class="form-row" id="apiKeyRow">
           <label>API Key</label>
           <div class="input-with-toggle">
@@ -234,13 +231,10 @@
             <button type="button" class="btn-toggle-key" id="btnToggleKey">显示</button>
           </div>
         </div>
-
         <div class="form-row" id="modelRow">
           <label>模型</label>
           <select name="model" id="modelSelect"></select>
         </div>
-
-        <!-- 测试连接 -->
         <div class="form-row test-conn-row">
           <button type="button" class="btn-sm btn-test" id="btnTestConn">测试连接</button>
           <span class="test-result" id="testResult"></span>
@@ -248,7 +242,7 @@
       </div>
 
       <div class="form-section">
-        <h3 class="section-title">填写选项</h3>
+        <h3 class="section-title">填表选项</h3>
         <div class="form-row toggle-row">
           <label>启用 AI 匹配</label>
           <label class="toggle">
@@ -259,7 +253,7 @@
         <div class="form-row">
           <label>置信度阈值 <span id="thresholdValue">0.7</span></label>
           <input type="range" name="confidenceThreshold" min="0.3" max="1" step="0.05" id="confidenceThreshold">
-          <p class="hint">低于此阈值的字段将标黄提示人工确认</p>
+          <p class="hint">低于阈值的 AI 字段会高亮提示人工确认。</p>
         </div>
       </div>
 
@@ -269,7 +263,7 @@
     </form>
 
     <div class="form-section" style="margin-top:20px">
-      <h3 class="section-title">填写历史（最近 20 条）</h3>
+      <h3 class="section-title">填表历史（最近 20 条）</h3>
       <div id="historyList"><p class="history-empty">暂无记录</p></div>
       <div style="margin-top:10px">
         <button class="btn-sm btn-danger" id="btnClearHistory">清除历史</button>
@@ -277,15 +271,13 @@
     </div>
   </section>
 
-  <!-- ── PDF 导入模态框 ── -->
   <div class="pdf-overlay" id="pdfOverlay" style="display:none">
     <div class="pdf-modal">
       <div class="pdf-modal-header">
         <h3 id="pdfModalTitle">从 PDF 导入简历</h3>
-        <button class="pdf-modal-close" id="pdfModalClose">✕</button>
+        <button class="pdf-modal-close" id="pdfModalClose">×</button>
       </div>
 
-      <!-- 步骤 1：选择解析方式 -->
       <div class="pdf-step" id="pdfStepMode">
         <p class="pdf-filename" id="pdfFilename"></p>
         <p class="pdf-ai-fallback-hint" id="pdfAiFallbackHint" style="display:none"></p>
@@ -294,20 +286,19 @@
             <span class="pdf-mode-icon">⚡</span>
             <div>
               <div class="pdf-mode-label">本地快速解析</div>
-              <div class="pdf-mode-desc">不消耗 API · 速度快 · 准确度一般</div>
+              <div class="pdf-mode-desc">不消耗 API，速度快，适合先导入基础字段。</div>
             </div>
           </button>
           <button class="pdf-mode-btn" id="btnAIParse">
-            <span class="pdf-mode-icon">🤖</span>
+            <span class="pdf-mode-icon">AI</span>
             <div>
               <div class="pdf-mode-label">AI 智能解析</div>
-              <div class="pdf-mode-desc">消耗 API · 速度慢 · 准确度高</div>
+              <div class="pdf-mode-desc">消耗 API，覆盖更高，适合复杂简历。</div>
             </div>
           </button>
         </div>
       </div>
 
-      <!-- 步骤 2：解析中 -->
       <div class="pdf-step" id="pdfStepLoading" style="display:none">
         <div class="pdf-loading-content">
           <span class="spinner-lg"></span>
@@ -315,7 +306,6 @@
         </div>
       </div>
 
-      <!-- 步骤 3：预览并确认 -->
       <div class="pdf-step" id="pdfStepPreview" style="display:none">
         <div class="pdf-preview-actions-top">
           <button class="btn-sm" id="btnSelectAll">全选</button>
@@ -330,7 +320,6 @@
     </div>
   </div>
 
-  <!-- 全局 Toast -->
   <div class="toast" id="toast"></div>
 
   <script type="module" src="sidepanel.js"></script>

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "JobPilot 智投助手",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "AI 驱动的求职表单自动填写助手，支持中国校招及各类 ATS 平台",
 
   "icons": {
@@ -29,6 +29,9 @@
       "matches": ["<all_urls>"],
       "js": [
         "content/form-detector.js",
+        "content/site-adapters/base-adapter.js",
+        "content/site-adapters/index.js",
+        "content/site-adapters/china-taiping.js",
         "content/label-matcher.js",
         "content/file-uploader.js",
         "content/form-filler.js"
@@ -65,7 +68,13 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["lib/pdf.min.mjs", "lib/pdf.worker.min.mjs", "data/default-profile.json"],
+      "resources": [
+        "lib/pdf.min.mjs",
+        "lib/pdf.worker.min.mjs",
+        "lib/enum-mappings.js",
+        "lib/fill-report.js",
+        "data/default-profile.json"
+      ],
       "matches": ["<all_urls>"]
     }
   ]

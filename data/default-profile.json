@@ -1,81 +1,202 @@
 {
-  "name": "张三",
-  "firstName": "三",
-  "lastName": "张",
-  "gender": "男",
-  "birthday": "1999-01-15",
-  "graduationYear": "2021",
-  "ethnicity": "汉族",
-  "hometown": "上海市",
-  "politicalStatus": "共青团员",
-  "documentType": "居民身份证",
-  "idNumber": "",
-  "phone": "13800138000",
-  "email": "zhangsan@example.com",
-  "address": "上海市浦东新区xxx路xxx号",
-  "wechat": "zhangsan_wx",
-  "jobPreferences": {
-    "expectedCity": "上海",
-    "availableFrom": "两周内",
-    "expectedSalary": "面议",
-    "internshipDuration": "每周 4 天，持续 6 个月"
+  "personal": {
+    "fullName": "宋培豪",
+    "fullNamePinyin": "Song Peihao",
+    "englishName": "Peihao Song",
+    "firstName": "培豪",
+    "lastName": "宋",
+    "gender": "",
+    "birthDate": "",
+    "age": null,
+    "nationality": "",
+    "ethnicity": "",
+    "nativePlace": "",
+    "politicalStatus": "",
+    "partyJoinDate": "",
+    "maritalStatus": "",
+    "healthStatus": "",
+    "bloodType": "",
+    "heightCm": null,
+    "weightKg": null,
+    "freshGraduateStatus": "",
+    "hasOverseasStudy": true,
+    "photo": ""
   },
-
+  "identity": {
+    "documentType": "",
+    "documentNumber": ""
+  },
+  "contact": {
+    "phone": "15221700380",
+    "email": "peihaosong2002@163.com",
+    "landline": "",
+    "address": "",
+    "postalCode": "",
+    "wechat": "",
+    "emergencyContactName": "",
+    "emergencyContactPhone": ""
+  },
+  "residency": {
+    "currentCity": "上海",
+    "currentAddress": "",
+    "homeAddress": "",
+    "householdType": "",
+    "householdAddress": "",
+    "policeStation": ""
+  },
   "education": [
     {
-      "school": "上海交通大学",
-      "major": "计算机科学与技术",
+      "school": "康奈尔大学",
+      "schoolCountry": "",
+      "degree": "硕士",
+      "educationLevel": "研究生",
+      "major": "数据科学与生物统计学",
+      "startDate": "2024-09",
+      "endDate": "2025-12",
+      "studyMode": "全日制",
+      "gpa": "",
+      "ranking": "",
+      "scholarships": "",
+      "campusPositions": "",
+      "campusPractice": ""
+    },
+    {
+      "school": "西交利物浦大学",
+      "schoolCountry": "",
       "degree": "本科",
-      "startDate": "2017-09",
-      "endDate": "2021-06",
-      "gpa": "3.8/4.0"
+      "educationLevel": "本科",
+      "major": "精算科学",
+      "startDate": "2020-09",
+      "endDate": "2024-06",
+      "studyMode": "全日制",
+      "gpa": "3.8 / 4.0",
+      "ranking": "",
+      "scholarships": "",
+      "campusPositions": "",
+      "campusPractice": ""
     }
   ],
-
   "experience": [
     {
-      "company": "字节跳动",
-      "title": "后端开发实习生",
-      "startDate": "2020-07",
-      "endDate": "2020-12",
-      "description": "参与推荐系统开发，使用 Go 语言实现高性能数据处理服务，优化接口响应时间 30%。"
+      "company": "焦点科技",
+      "department": "大数据研发部",
+      "title": "大数据研发部实习生",
+      "startDate": "2023-06",
+      "endDate": "2023-08",
+      "location": "",
+      "description": "基于 Python 设计并优化数据处理流程，降低数据错误率 20%，提升关键指标测算准确率 15%。使用 Python + SQL 搭建端到端 ETL 数据管道，实现原始业务数据的自动抽取、清洗标准化与结构化入库，支持下游建模分析。负责大规模 SQL 数据集的管理与维护，数据准确率达到 98%，保障客户应用数据的稳定性与可靠性。基于随机森林与逻辑回归构建预测模型，推动模型 AUC 提升 0.03，为产品优化与业务决策提供数据支持。",
+      "achievements": "数据错误率降低 20%，关键指标测算准确率提升 15%，数据准确率达到 98%，模型 AUC 提升 0.03。"
     }
   ],
-
   "projects": [
     {
-      "name": "JobPilot 智投助手",
-      "role": "独立开发",
-      "startDate": "2025-12",
-      "endDate": "2026-03",
-      "description": "开发 Chrome 扩展，实现招聘表单检测、AI 字段匹配、自动填写和 PDF 简历导入。"
-    }
-  ],
-
-  "awards": [
+      "name": "HotNews Agent",
+      "role": "个人项目",
+      "startDate": "2025-08",
+      "endDate": "Present",
+      "description": "构建生产级自动化新闻情报流水线，实现 RSS 接入、智能排序、语义去重、重写、摘要生成、HTML 推送和日志监控。通过两阶段 LLM 评分与摘要架构、缓存机制和兜底策略，将 LLM 调用成本降低 80% 以上。",
+      "techStack": "Python, AI, GitHub Actions, SQLite"
+    },
     {
-      "name": "国家奖学金",
-      "issuer": "教育部",
-      "year": "2020"
+      "name": "Research TA Agent",
+      "role": "个人项目",
+      "startDate": "2025-09",
+      "endDate": "Present",
+      "description": "基于 LangGraph 开发本地优先研究 Agent，采用 FAISS 向量检索、BM25 关键词召回和 Cross-Encoder 重排序，实现带页码溯源的回答。搭建沙盒化 Pandas 数据分析模块，保障本地数据处理与结果可复现。",
+      "techStack": "LangGraph, FAISS, BM25, Cross-Encoder, Pandas"
     }
   ],
-
-  "languages": [
-    {
-      "name": "英语",
-      "level": "CET-6"
-    }
+  "skills": [
+    "Python",
+    "R",
+    "Stata",
+    "MATLAB",
+    "SQL",
+    "Git",
+    "XGBoost",
+    "LightGBM",
+    "LangGraph",
+    "FAISS",
+    "BM25",
+    "Cross-Encoder",
+    "Pandas",
+    "RAG",
+    "LoRA",
+    "PEFT",
+    "MCP",
+    "AI Agent"
   ],
-
-  "skills": ["Python", "JavaScript", "React", "Node.js", "Docker", "Linux"],
-
   "links": {
-    "github": "https://github.com/zhangsan",
+    "github": "https://github.com/guleguleguru",
     "linkedin": "",
     "website": ""
   },
-
-  "selfIntro": "具有扎实的计算机基础和丰富的项目经验，热爱编程，善于学习新技术，有良好的团队协作能力。",
-
-  "resumeFilePath": ""
+  "certificates": [],
+  "awards": [
+    {
+      "name": "英国精算师协会基金会中国及东南亚奖学金（IFoA Foundation CSEA Scholarship）",
+      "issuer": "",
+      "year": "",
+      "description": ""
+    },
+    {
+      "name": "本科毕业项目最佳表现奖",
+      "issuer": "西交利物浦大学",
+      "year": "2024",
+      "description": "专业 top1"
+    },
+    {
+      "name": "校级全额学术优秀奖学金",
+      "issuer": "西交利物浦大学",
+      "year": "2021/22、2022/23",
+      "description": "专业前 5%，连续两学年"
+    }
+  ],
+  "languages": [],
+  "familyMembers": [],
+  "jobPreferences": {
+    "expectedLocations": [],
+    "expectedPositions": [],
+    "expectedSalary": "",
+    "availableFrom": "",
+    "internshipDuration": "",
+    "jobStatus": ""
+  },
+  "compliance": {
+    "manualOnlyFields": [
+      "personal.gender",
+      "personal.birthDate",
+      "personal.nationality",
+      "personal.ethnicity",
+      "personal.nativePlace",
+      "personal.politicalStatus",
+      "personal.partyJoinDate",
+      "personal.maritalStatus",
+      "personal.healthStatus",
+      "personal.heightCm",
+      "personal.weightKg",
+      "personal.photo",
+      "identity.documentType",
+      "identity.documentNumber",
+      "contact.address",
+      "contact.postalCode",
+      "contact.wechat",
+      "contact.emergencyContactName",
+      "contact.emergencyContactPhone",
+      "residency.currentAddress",
+      "residency.homeAddress",
+      "residency.householdType",
+      "residency.householdAddress",
+      "residency.policeStation",
+      "languages",
+      "familyMembers"
+    ],
+    "lastReviewAt": "2026-03-27"
+  },
+  "customFields": {},
+  "meta": {
+    "schemaVersion": 2
+  },
+  "graduationYear": "2025",
+  "selfIntro": "具备数据科学、机器学习、ETL 与 AI Agent 开发背景，拥有中美高校复合教育经历和数据研发实习经验，能够独立完成数据管道、建模分析与基于大模型的自动化系统开发。"
 }
