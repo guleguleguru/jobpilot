@@ -16,6 +16,10 @@
   } = base;
 
   const FIELD_CONTROL_SELECTOR = 'input, select, textarea, button, [role="button"], [role="combobox"]';
+  const DROPDOWN_ROOT_SELECTOR = '.el-select-dropdown, .ant-select-dropdown, .ivu-select-dropdown, .layui-form-select, [role="listbox"], .dropdown-menu, .select-dropdown, .select-options';
+  const DROPDOWN_OPTION_SELECTOR = '.el-select-dropdown__item, .ant-select-item-option, .ant-select-item-option-content, .ant-select-dropdown-menu-item, .ivu-select-item, .layui-this, [role="option"], .dropdown-item, li';
+  const RADIO_OPTION_SELECTOR = 'label, button, [role="radio"], [role="button"], .radio, .ant-radio-wrapper, .el-radio, .ant-checkbox-wrapper, .el-checkbox';
+  const PHOENIX_LIST_ITEM_SELECTOR = '.list-item-container, .phoenix-selectList__listItem, .area-item-container';
   const LABEL_NOISE_PATTERN = /^(请输入|请选择|点击选择|点击上传|上传文件|上传附件|搜索|0\/2000)$/;
   const DATE_HINT_PATTERN = /(日期|时间|date|time)/i;
   const RADIO_HINT_PATTERN = /(性别|gender|是否|留学|海外|应届|fresh\s*graduate|graduate\s*status)/i;
@@ -51,11 +55,17 @@
   ];
 
   const SECTION_KEYWORDS = {
+    education: ['教育经历', '教育背景', '学习经历'],
+    projects: ['在校实践', '校内实践', '项目经历'],
+    experience: ['实习经历', '工作经历', '实习经验'],
     languages: ['语言能力', '外语能力', '语言水平', '语种'],
     familyMembers: ['家庭成员', '家庭情况', '主要家庭成员', '家庭信息'],
   };
 
   const SECTION_ADD_PATTERNS = {
+    education: [/(添加|新增|继续添加).{0,4}(教育|学校|学习经历)/, /(添加|新增).{0,4}(一条|一项)/],
+    projects: [/(添加|新增|继续添加).{0,4}(在校实践|校内实践|项目)/, /(添加|新增).{0,4}(一条|一项)/],
+    experience: [/(添加|新增|继续添加).{0,4}(实习|工作|经历)/, /(添加|新增).{0,4}(一条|一项)/],
     languages: [/(添加|新增|继续添加).{0,4}(语言|语种|外语)/, /(添加|新增).{0,4}(一条|一项)/],
     familyMembers: [/(添加|新增|继续添加).{0,4}(家庭|成员|家属)/, /(添加|新增).{0,4}(一条|一项)/],
   };
@@ -325,6 +335,222 @@
     return element.parentElement || element.ownerDocument;
   }
 
+  function uniqueElements(nodes = []) {
+    return [...new Set(nodes.filter(node => node instanceof Element || node instanceof Document))];
+  }
+
+  function collectSearchRoots(element, maxDepth = 5) {
+    const roots = [];
+    let current = element instanceof Element ? element : null;
+    let depth = 0;
+    while (current && depth < maxDepth) {
+      roots.push(current);
+      current = current.parentElement;
+      depth += 1;
+    }
+    return uniqueElements(roots);
+  }
+
+  function resolvePopupRoot(trigger) {
+    const doc = trigger?.ownerDocument || document;
+    const popupId = trigger?.getAttribute?.('aria-controls') || trigger?.getAttribute?.('aria-owns') || '';
+    if (!popupId) return null;
+    const popup = doc.getElementById(popupId);
+    return popup && isVisible(popup) ? popup : null;
+  }
+
+  function getVisibleDropdownRoots(doc = document) {
+    return uniqueElements(Array.from(doc.querySelectorAll(DROPDOWN_ROOT_SELECTOR)).filter(isVisible));
+  }
+
+  function findOptionAcrossRoots(roots, selectors, patterns) {
+    for (const root of uniqueElements(roots)) {
+      const found = findElementByText(selectors, patterns, root);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function isPhoenixSelectInput(element) {
+    return element instanceof HTMLInputElement && element.classList.contains('phoenix-select__input');
+  }
+
+  function isPhoenixRadioRoot(element) {
+    return element instanceof Element && Boolean(element.closest('.phoenix-radio-group, .phoenix-radio'));
+  }
+
+  function dispatchKey(element, key) {
+    if (!element) return;
+    const options = {
+      key,
+      code: key,
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+    };
+    element.dispatchEvent(new KeyboardEvent('keydown', options));
+    element.dispatchEvent(new KeyboardEvent('keyup', options));
+  }
+
+  function getVisiblePhoenixLayer(doc = document) {
+    const layers = Array.from(doc.querySelectorAll('.common-unmodeled-layer, .common-unmodeled-layer__layerContent'))
+      .filter(node => node instanceof Element && isVisible(node));
+    return layers.at(-1) || null;
+  }
+
+  function normalizeCompactText(value) {
+    return normalizeText(value).replace(/\s+/g, '');
+  }
+
+  function matchesChoiceText(text, value) {
+    const left = normalizeCompactText(text);
+    const right = normalizeCompactText(value);
+    return Boolean(left && right && (left === right || left.includes(right) || right.includes(left)));
+  }
+
+  async function openPhoenixSelector(element) {
+    const trigger = element.closest('.phoenix-select, .phoenix-unmodeled-layer__protect, .phoenix-unmodeled-layer') || element;
+    trigger.click();
+    element.focus?.();
+    dispatchKey(element, 'ArrowDown');
+    const doc = element.ownerDocument || document;
+    for (let i = 0; i < 10; i += 1) {
+      await sleep(120);
+      const layer = getVisiblePhoenixLayer(doc);
+      if (layer) return layer;
+    }
+    return null;
+  }
+
+  async function commitPhoenixSelector(layer) {
+    const buttons = Array.from(layer?.querySelectorAll('.selector-footer-button .phoenix-button, .area-footer-button .phoenix-button') || []);
+    const confirm = buttons.find(button => /确定/.test(normalizeText(button.textContent || ''))) || buttons.at(-1) || null;
+    if (confirm) {
+      confirm.click();
+      await sleep(120);
+      return true;
+    }
+    return false;
+  }
+
+  function getPhoenixSelectedText(element) {
+    const inputValue = normalizeCompactText(element?.value || '');
+    if (inputValue) return inputValue;
+
+    const selectRoot = element?.closest?.('.phoenix-select, .phoenix-unmodeled-layer, .phoenix-unmodeled-layer__protect');
+    const textNode = selectRoot?.querySelector?.('.phoenix-select__text, .phoenix-select__singleLabel, .phoenix-select__placeholder');
+    return normalizeCompactText(textNode?.textContent || '');
+  }
+
+  function getPhoenixListItems(layer) {
+    return Array.from(layer?.querySelectorAll(PHOENIX_LIST_ITEM_SELECTOR) || []);
+  }
+
+  async function setPhoenixMonthValue(element, value) {
+    const [yearText, monthText] = String(value || '').split('-');
+    const year = Number(yearText);
+    const month = Number(monthText);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) return false;
+
+    const doc = element.ownerDocument || document;
+    let layer = getVisiblePhoenixLayer(doc);
+    if (!layer) return false;
+
+    let guard = 0;
+    while (guard < 24) {
+      layer = getVisiblePhoenixLayer(doc) || layer;
+      const yearDisplay = layer.querySelector('.phoenix-calendar-month-panel-year-select-content');
+      const currentYear = Number(normalizeText(yearDisplay?.textContent || '').replace(/[^\d]/g, ''));
+      if (!Number.isFinite(currentYear)) break;
+      if (currentYear === year) break;
+
+      const buttonSelector = currentYear > year
+        ? '.phoenix-calendar-month-panel-prev-year-btn, .phoenix-calendar-prev-year-btn'
+        : '.phoenix-calendar-month-panel-next-year-btn, .phoenix-calendar-next-year-btn';
+      const button = layer.querySelector(buttonSelector);
+      if (!(button instanceof HTMLElement)) break;
+      button.click();
+      await sleep(120);
+      guard += 1;
+    }
+
+    layer = getVisiblePhoenixLayer(doc) || layer;
+    const monthCells = Array.from(layer.querySelectorAll('.phoenix-calendar-month-panel-cell'));
+    const target = monthCells[month - 1];
+    if (!(target instanceof HTMLElement)) return false;
+
+    target.click();
+    await sleep(200);
+    return matchesChoiceText(getPhoenixSelectedText(element), value);
+  }
+
+  async function selectPhoenixOption(element, value) {
+    const doc = element.ownerDocument || document;
+    let layer = await openPhoenixSelector(element);
+    if (!layer) return false;
+
+    if (layer.querySelector('.phoenix-date-picker, .phoenix-calendar-input')) {
+      return setPhoenixDateValue(element, value, {
+        setInputValue(el, next) {
+          el.focus?.();
+          el.value = next;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+      }, layer);
+    }
+
+    let items = getPhoenixListItems(layer);
+    for (let i = 0; !items.length && i < 10; i += 1) {
+      await sleep(120);
+      layer = getVisiblePhoenixLayer(doc) || layer;
+      items = getPhoenixListItems(layer);
+    }
+    const target = items.find(item => matchesChoiceText(item.textContent || '', value));
+    if (!target) return false;
+
+    const icon = target.querySelector('.icon-container.visible, .icon-container') || target;
+    icon.click();
+    await sleep(150);
+
+    const committed = await commitPhoenixSelector(getVisiblePhoenixLayer(doc) || layer);
+    if (!committed && !target.matches('.phoenix-selectList__listItem')) {
+      dispatchKey(element, 'Enter');
+    }
+    await sleep(250);
+
+    const selectedText = getPhoenixSelectedText(element) || normalizeCompactText(target.textContent || '');
+    return matchesChoiceText(selectedText, value);
+  }
+
+  async function setPhoenixDateValue(element, value, utils, initialLayer = null) {
+    const doc = element.ownerDocument || document;
+    const layer = initialLayer || await openPhoenixSelector(element);
+    if (!layer) return false;
+
+    if (layer.querySelector('.phoenix-calendar-month-panel')) {
+      return setPhoenixMonthValue(element, value);
+    }
+
+    const calendarInput = layer.querySelector('input.phoenix-calendar-input');
+    if (!(calendarInput instanceof HTMLInputElement)) return false;
+
+    utils?.setInputValue?.(calendarInput, value);
+    dispatchKey(calendarInput, 'Enter');
+    await sleep(150);
+
+    const nextValue = normalizeText(element.value || '');
+    if (matchesChoiceText(nextValue, value)) return true;
+
+    const fallbackLayer = getVisiblePhoenixLayer(doc);
+    const committed = await commitPhoenixSelector(fallbackLayer || layer);
+    if (!committed) {
+      calendarInput.blur();
+      await sleep(120);
+    }
+    return matchesChoiceText(element.value || '', value);
+  }
+
   function extractChoiceOptions(element) {
     const roots = [];
     let current = element.parentElement;
@@ -532,6 +758,8 @@
     }
 
     matchField({ field, profile, helpers }) {
+      return null;
+
       const combinedText = [
         field.label,
         ...(field.labelCandidates || []),
@@ -548,6 +776,13 @@
         field.helperText,
         field.name,
       ].filter(Boolean).join(' ');
+      const hasExplicitLabel = [
+        field.label,
+        ...(field.labelCandidates || []),
+      ].some(text => {
+        const normalized = normalizeText(text);
+        return normalized && !LABEL_NOISE_PATTERN.test(normalized) && !SIMPLE_CHOICE_PATTERN.test(normalized);
+      });
 
       const buildMatch = key => ({
         matched: true,
@@ -557,24 +792,74 @@
         manualOnly: !isAutoFillOverrideKey(key) && helpers.isSensitiveField(field, key),
       });
 
-      if (FAMILY_SECTION_PATTERN.test(combinedText)) {
+      if (FAMILY_SECTION_PATTERN.test(combinedText) && directText) {
         for (const rule of TAIPING_SECTION_RULES.familyMembers) {
-          if (rule.pattern.test(combinedText)) {
+          if (rule.pattern.test(directText)) {
             return buildMatch(helpers.claimGroupedKey('familyMembers', rule.subkey));
           }
         }
       }
 
-      if (LANGUAGE_SECTION_PATTERN.test(combinedText)) {
+      if (LANGUAGE_SECTION_PATTERN.test(combinedText) && directText) {
         for (const rule of TAIPING_SECTION_RULES.languages) {
-          if (rule.pattern.test(combinedText)) {
+          if (rule.pattern.test(directText)) {
             return buildMatch(helpers.claimGroupedKey('languages', rule.subkey));
           }
         }
       }
 
+      if (/在校实践|校内实践/.test(combinedText) && directText) {
+        if (/实践名称/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('projects', 'name'));
+        }
+        if (/实践描述/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('projects', 'description'));
+        }
+      }
+
+      if (/实习经历|工作经历|实习经验/.test(combinedText) && directText) {
+        if (/单位名称/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('experience', 'company'));
+        }
+        if (/职位名称/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('experience', 'title'));
+        }
+        if (/实习内容/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('experience', 'description'));
+        }
+      }
+
+      if (/教育经历|教育背景|学习经历/.test(combinedText) && directText) {
+        if (/学校名称/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('education', 'school'));
+        }
+        if (/学校所在国家/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('education', 'schoolCountry'));
+        }
+        if (/专业名称/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('education', 'major'));
+        }
+        if (/学历取得方式/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('education', 'studyMode'));
+        }
+        if (/学位/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('education', 'educationLevel'));
+        }
+        if (/学历/.test(directText)) {
+          return buildMatch(helpers.claimGroupedKey('education', 'degree'));
+        }
+      }
+
+      if (hasExplicitLabel && !/(证件照|上传文件|上传照片)/.test(directText)) {
+        return null;
+      }
+
       if (field.type === 'file' || /(证件照|上传文件|上传照片|证件照片)/.test(directText)) {
         return buildMatch('personal.photo');
+      }
+
+      if (hasExplicitLabel) {
+        return null;
       }
 
       const templateKey = resolveTemplateKey(field, helpers);
@@ -586,24 +871,17 @@
     }
 
     async ensureRepeatItem(sectionKey, index) {
-      const sectionRoot = getSectionRoot(SECTION_KEYWORDS[sectionKey] || []);
-      if (!sectionRoot) {
-        return { created: false, reason: `${sectionKey}_section_not_found` };
-      }
-
-      const addButton = this.findAddButton(sectionKey, sectionRoot);
-      if (!addButton) {
-        return { created: false, reason: `${sectionKey}_add_button_not_found` };
-      }
-
-      const limit = this.repeatableLimits[sectionKey] || 5;
-      if (index + 1 > limit) {
-        return { created: false, reason: `${sectionKey}_limit_reached` };
-      }
-
-      const changed = await waitForDomChange(() => addButton.click(), 1500);
+      const sectionKeywords = SECTION_KEYWORDS[sectionKey] || [];
+      const sectionRoot = getSectionRoot(sectionKeywords) || document.body || document;
+      const result = await this.ensureRepeatItemGeneric({
+        sectionKey,
+        index,
+        keywords: sectionKeywords,
+        buttonPatterns: SECTION_ADD_PATTERNS[sectionKey] || [],
+        countRoot: sectionRoot,
+      });
       await sleep(200);
-      return { created: changed, reason: changed ? 'created' : `${sectionKey}_dom_not_changed` };
+      return result;
     }
 
     findAddButton(sectionKey, sectionRoot) {
@@ -618,10 +896,16 @@
       return findElementByText('button, a, [role="button"], .btn, .button, span, div', patterns, sectionRoot);
     }
 
-    setSelectValue({ element, value, utils }) {
+    async setSelectValue({ element, value, utils }) {
       const text = String(value || '').trim();
       if (!text) return null;
 
+      if (isPhoenixSelectInput(element)) {
+        const ok = await selectPhoenixOption(element, text);
+        return ok;
+      }
+
+      const doc = element?.ownerDocument || document;
       const trigger = element.closest('[role="combobox"], li, .select, .dropdown') || element;
       trigger.click();
 
@@ -633,8 +917,13 @@
 
       const exactPattern = new RegExp(`^${escapeRegExp(text)}$`);
       const fuzzyPattern = new RegExp(escapeRegExp(text));
-      const option = findElementByText(
-        '.el-select-dropdown__item, .ant-select-item-option, .ivu-select-item, .layui-this, li, [role="option"], .dropdown-item, span, div',
+      const option = findOptionAcrossRoots(
+        [
+          resolvePopupRoot(trigger),
+          ...getVisibleDropdownRoots(doc),
+          ...collectSearchRoots(trigger, 4),
+        ],
+        DROPDOWN_OPTION_SELECTOR,
         [exactPattern, fuzzyPattern]
       );
 
@@ -643,7 +932,11 @@
       return true;
     }
 
-    setDateValue({ element, value, utils }) {
+    async setDateValue({ element, value, utils }) {
+      if (isPhoenixSelectInput(element)) {
+        return await setPhoenixDateValue(element, value, utils);
+      }
+
       try {
         utils.setInputValue(element, value);
         return true;
@@ -652,17 +945,27 @@
       }
     }
 
-    setRadioValue({ element, value }) {
+    async setRadioValue({ element, value }) {
       const text = String(value || '').trim();
       if (!text) return null;
+
+      if (isPhoenixRadioRoot(element)) {
+        const radioRoot = element.closest('.phoenix-radio-group') || findChoiceRoot(element);
+        const radios = Array.from(radioRoot.querySelectorAll('.phoenix-radio'));
+        const target = radios.find(radio => matchesChoiceText(radio.textContent || '', text));
+        if (!target) return false;
+        target.click();
+        await sleep(80);
+        return target.classList.contains('phoenix-radio--checked');
+      }
 
       const radioRoot = findChoiceRoot(element);
       const exactPattern = new RegExp(`^${escapeRegExp(text)}$`);
       const fuzzyPattern = new RegExp(escapeRegExp(text));
-      const option = findElementByText(
-        'label, span, div, button, a, [role="radio"], [role="button"], .radio, .ant-radio-wrapper, .el-radio',
-        [exactPattern, fuzzyPattern],
-        radioRoot
+      const option = findOptionAcrossRoots(
+        [radioRoot, ...collectSearchRoots(element, 4)],
+        RADIO_OPTION_SELECTOR,
+        [exactPattern, fuzzyPattern]
       );
 
       if (!option) return null;
@@ -672,10 +975,19 @@
 
     getDiagnosticsHints(context = {}) {
       const hints = [];
-      if (!context.repeatSupport?.languages) {
+      if ((context.profile?.education?.length || 0) > 1 && !context.repeatSupport?.education) {
+        hints.push('中国太平教育经历区块未识别到稳定的新增入口');
+      }
+      if ((context.profile?.projects?.length || 0) > 1 && !context.repeatSupport?.projects) {
+        hints.push('中国太平在校实践区块未识别到稳定的新增入口');
+      }
+      if ((context.profile?.experience?.length || 0) > 1 && !context.repeatSupport?.experience) {
+        hints.push('中国太平实习经历区块未识别到稳定的新增入口');
+      }
+      if ((context.profile?.languages?.length || 0) > 1 && !context.repeatSupport?.languages) {
         hints.push('中国太平语言能力区块未识别到稳定的新增入口');
       }
-      if (!context.repeatSupport?.familyMembers) {
+      if ((context.profile?.familyMembers?.length || 0) > 1 && !context.repeatSupport?.familyMembers) {
         hints.push('中国太平家庭成员区块未识别到稳定的新增入口');
       }
       return hints;

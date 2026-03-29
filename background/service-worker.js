@@ -30,6 +30,25 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function withTimeout(promise, timeoutMs, label = 'operation') {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return promise;
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    Promise.resolve(promise)
+      .then(value => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch(error => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
 function shouldBootstrapFrame(error) {
   const message = String(error?.message || '');
   return /Receiving end does not exist|Could not establish connection|message port closed/i.test(message);
@@ -51,11 +70,16 @@ async function bootstrapFrameContentScripts(tabId, frameId) {
 async function sendMessageWithBootstrap(tabId, message, frameId, options = {}) {
   const retries = options.retries ?? 2;
   const retryDelayMs = options.retryDelayMs ?? 250;
+  const messageTimeoutMs = options.messageTimeoutMs ?? 0;
   let lastError = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const response = await chrome.tabs.sendMessage(tabId, message, { frameId });
+      const response = await withTimeout(
+        chrome.tabs.sendMessage(tabId, message, { frameId }),
+        messageTimeoutMs,
+        `Message ${message?.action || 'unknown'} to frame ${frameId}`
+      );
       if (response != null) return response;
     } catch (error) {
       lastError = error;
@@ -320,7 +344,7 @@ async function fillAllFrames(tabId, allMappings, profile = null, diagnostics = n
           diagnostics,
         },
         frameId,
-        { retries: 1, retryDelayMs: 150 }
+        { retries: 1, retryDelayMs: 150, messageTimeoutMs: 45000 }
       );
       if (!resp?.success) continue;
       allResults.push(...(resp.data?.results ?? []));
@@ -331,6 +355,12 @@ async function fillAllFrames(tabId, allMappings, profile = null, diagnostics = n
     } catch (e) {
       console.error('[JobPilot SW] 填写帧', frameId, '失败:', e.message);
       // 帧已销毁（SPA 路由切换），将该帧所有字段计入失败数
+      allResults.push(...mappings.map(mapping => ({
+        fieldId: mapping.field?.id || '',
+        status: 'error',
+        message: e.message || 'fill_frame_failed',
+        key: mapping.key || mapping.field?.normalizedKey || '',
+      })));
       summary.errors += mappings.length;
     }
   }
