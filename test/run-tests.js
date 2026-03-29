@@ -12,6 +12,9 @@ import {
   sanitizeProfile,
   validateFieldMappings,
 } from '../lib/prompt-templates.js';
+import { createFillReport, mergeDiagnosticsIntoReport, mergeFillReports, summarizeFillReport, upsertRepeatSection } from '../lib/fill-report.js';
+import { mapEnumValue } from '../lib/enum-mappings.js';
+import { normalizeProfile } from '../lib/profile-schema.js';
 
 const tests = [];
 
@@ -171,6 +174,18 @@ test('sanitizeProfile keeps structured job preferences and extra arrays', () => 
   assert.equal(sanitized.languages[0].level, 'CET-6');
 });
 
+test('normalizeProfile preserves name pinyin for site-specific fields', () => {
+  const normalized = normalizeProfile({
+    personal: {
+      fullName: '宋培豪',
+      fullNamePinyin: 'Song Peihao',
+    },
+  });
+
+  assert.equal(normalized.personal.fullName, '宋培豪');
+  assert.equal(normalized.personal.fullNamePinyin, 'Song Peihao');
+});
+
 test('buildFieldMappingPrompt includes sanitized profile and summarized fields', () => {
   const messages = buildFieldMappingPrompt(
     [
@@ -195,6 +210,26 @@ test('buildFieldMappingPrompt includes sanitized profile and summarized fields',
   assert.ok(messages[1].content.includes('"school": "上海交通大学"'));
   assert.ok(!messages[1].content.includes('idNumber'));
   assert.ok(messages[1].content.includes('"fieldName": "motivation"'));
+});
+
+test('buildFieldMappingPrompt preserves candidate hints for AI fallback', () => {
+  const messages = buildFieldMappingPrompt(
+    [
+      {
+        id: 'field_2',
+        label: '学校所在国家',
+        type: 'select',
+        normalizedKey: 'education[0].schoolCountry',
+        candidateHints: [
+          { key: 'education[0].schoolCountry', score: 8.4, exactAliasHit: true },
+        ],
+      },
+    ],
+    { education: [{ school: 'Cornell University' }] }
+  );
+
+  assert.ok(messages[1].content.includes('"candidateHints"'));
+  assert.ok(messages[1].content.includes('"education[0].schoolCountry"'));
 });
 
 test('validateFieldMappings converts option text back to option value', () => {
@@ -225,6 +260,64 @@ test('validateFieldMappings converts option text back to option value', () => {
 
   assert.equal(fixed[0].suggestedValue, 'male');
   assert.equal(fixed[1].confidence, 0.3);
+});
+
+test('mapEnumValue maps Chinese enum labels to option values', () => {
+  const yesNo = mapEnumValue({
+    fieldKey: 'personal.hasOverseasStudy',
+    value: '有',
+    options: [
+      { value: '1', text: '是' },
+      { value: '0', text: '否' },
+    ],
+  });
+
+  const political = mapEnumValue({
+    fieldKey: 'personal.politicalStatus',
+    value: '共青团员',
+    options: [
+      { value: 'party', text: '中共党员' },
+      { value: 'league', text: '共青团员' },
+      { value: 'mass', text: '群众' },
+    ],
+  });
+
+  assert.equal(yesNo.mappedValue, '1');
+  assert.equal(political.mappedValue, 'league');
+});
+
+test('fill report merges diagnostics and repeat sections', () => {
+  const report = createFillReport({ hostname: 'example.com', adapterUsed: 'china-taiping' });
+  mergeDiagnosticsIntoReport(report, {
+    missingRequiredFields: [{ fieldId: 'a' }],
+    unmappedFields: [{ fieldId: 'b' }],
+    sensitiveFieldsSkipped: [{ fieldId: 'c' }],
+    unmappedValues: [{ fieldId: 'd' }],
+  });
+  upsertRepeatSection(report, {
+    section: 'languages',
+    expected: 2,
+    existing: 1,
+    created: 1,
+    filled: 2,
+    warnings: ['languages:add_button_missing_after_limit'],
+  });
+
+  const merged = mergeFillReports([
+    report,
+    createFillReport({
+      hostname: 'example.com',
+      adapterUsed: 'china-taiping',
+      detectedCount: 10,
+      warnings: ['familyMembers:dom_not_changed'],
+    }),
+  ]);
+  const summary = summarizeFillReport(merged);
+
+  assert.equal(merged.adapterUsed, 'china-taiping');
+  assert.equal(merged.unmappedValues.length, 1);
+  assert.equal(merged.repeatSections[0].created, 1);
+  assert.equal(summary.warningCount, 1);
 });
 
 let passed = 0;

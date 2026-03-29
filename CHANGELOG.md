@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.0 — Phase 5 站点适配与发布整理
+
 ### Functional enhancements
 
 - 增强字段语义识别：字段检测新增 `helperText`、`sectionLabel`、`contextText`，匹配不再只依赖 `label / placeholder / name`
@@ -15,7 +17,7 @@
 ### Repository and maintenance
 
 - 新增标准开源仓库文件：`README.md`、`.gitignore`、`LICENSE`
-- 新增公开发布用文案：`RELEASE-v0.4.0.md`
+- 新增公开发布用文案：`RELEASE-v0.5.0.md`
 - 新增隐私说明：`PRIVACY.md`
 - 新增兼容性跟踪台账：`COMPATIBILITY.md`
 - 新增贡献说明：`CONTRIBUTING.md`
@@ -89,7 +91,7 @@
 
 ### 其他更新
 
-- `manifest.json` 版本升级至 0.4.0
+- `manifest.json` 版本升级至 0.5.0
 - `web_accessible_resources` 新增 `lib/pdf.min.mjs`、`lib/pdf.worker.min.mjs`
 - 侧边栏 CSS 新增 PDF 模态框、模板选择器、测试连接等样式
 

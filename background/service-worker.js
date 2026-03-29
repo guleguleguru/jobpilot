@@ -3,10 +3,77 @@
  * 负责：AI API 调用、消息路由、快捷键、历史记录、sidepanel 管理
  */
 
-import { getProfile, getSettings, getResumeFile, saveHistoryEntry } from '../lib/storage.js';
+import {
+  getLastFillReport,
+  getProfile,
+  getResumeFile,
+  getSettings,
+  saveHistoryEntry,
+  saveLastFillReport,
+} from '../lib/storage.js';
 import { AIProvider } from '../lib/ai-provider.js';
 import { PROVIDER_PRESETS } from '../lib/ai-provider.js';
+import { mergeFillReports } from '../lib/fill-report.js';
 import { buildFieldMappingPrompt, validateFieldMappings } from '../lib/prompt-templates.js';
+
+const CONTENT_SCRIPT_FILES = [
+  'content/form-detector.js',
+  'content/site-adapters/base-adapter.js',
+  'content/site-adapters/index.js',
+  'content/site-adapters/china-taiping.js',
+  'content/label-matcher.js',
+  'content/file-uploader.js',
+  'content/form-filler.js',
+];
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function shouldBootstrapFrame(error) {
+  const message = String(error?.message || '');
+  return /Receiving end does not exist|Could not establish connection|message port closed/i.test(message);
+}
+
+async function bootstrapFrameContentScripts(tabId, frameId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, frameIds: [frameId] },
+      files: CONTENT_SCRIPT_FILES,
+    });
+    return true;
+  } catch (error) {
+    console.debug('[JobPilot SW] 注入内容脚本失败:', frameId, error.message);
+    return false;
+  }
+}
+
+async function sendMessageWithBootstrap(tabId, message, frameId, options = {}) {
+  const retries = options.retries ?? 2;
+  const retryDelayMs = options.retryDelayMs ?? 250;
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await chrome.tabs.sendMessage(tabId, message, { frameId });
+      if (response != null) return response;
+    } catch (error) {
+      lastError = error;
+      if (shouldBootstrapFrame(error)) {
+        await bootstrapFrameContentScripts(tabId, frameId);
+      } else if (attempt === retries) {
+        throw error;
+      }
+    }
+
+    if (attempt < retries) {
+      await sleep(retryDelayMs * (attempt + 1));
+    }
+  }
+
+  if (lastError) throw lastError;
+  return null;
+}
 
 // ── 侧边栏：点击图标时打开 ──
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
@@ -25,8 +92,9 @@ chrome.commands.onCommand.addListener(async (command) => {
   if (command !== 'quick-fill') return;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab) return;
-  // 向 content script 发 quickFill 指令（仅正则匹配，无 AI，速度最快）
-  chrome.tabs.sendMessage(tab.id, { action: 'quickFill' }).catch(() => {});
+  try {
+    await sendMessageWithBootstrap(tab.id, { action: 'quickFill' }, 0, { retries: 1, retryDelayMs: 150 });
+  } catch (_) {}
 });
 
 // ── 消息总路由 ──
@@ -46,6 +114,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: true, data: await getResumeFile() });
           break;
 
+        case 'getLastFillReport':
+          sendResponse({ success: true, data: await getLastFillReport() });
+          break;
+
         case 'aiFieldMapping':
           sendResponse(await handleAIFieldMapping(message.payload));
           break;
@@ -60,7 +132,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
 
         case 'fillAllFrames':
-          sendResponse(await fillAllFrames(message.payload.tabId, message.payload.allMappings));
+          sendResponse(await fillAllFrames(
+            message.payload.tabId,
+            message.payload.allMappings,
+            message.payload.profile,
+            message.payload.diagnostics
+          ));
           break;
 
         case 'formsUpdated':
@@ -142,6 +219,19 @@ async function handleAIFieldMapping(payload) {
  * 跨域子帧注入了独立 content script，直接按 frameId 查询。
  */
 async function detectAllFrames(tabId) {
+  let lastResult = null;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    lastResult = await detectAllFramesOnce(tabId);
+    if (lastResult?.data?.totalFields > 0) return lastResult;
+    await sleep(300 * (attempt + 1));
+  }
+  return lastResult || {
+    success: true,
+    data: { forms: [], totalFields: 0, scannedAt: new Date().toISOString() },
+  };
+}
+
+async function detectAllFramesOnce(tabId) {
   let frames;
   try {
     frames = await chrome.webNavigation.getAllFrames({ tabId });
@@ -165,10 +255,11 @@ async function detectAllFrames(tabId) {
     }
 
     try {
-      const resp = await chrome.tabs.sendMessage(
+      const resp = await sendMessageWithBootstrap(
         tabId,
         { action: 'detectForms' },
-        { frameId: frame.frameId }
+        frame.frameId,
+        { retries: 2, retryDelayMs: 200 }
       );
       if (!resp?.success || !resp.data?.forms?.length) continue;
 
@@ -206,7 +297,7 @@ async function detectAllFrames(tabId) {
  * frameId 0：主帧（同时处理同源 iframe via contentDocument）。
  * frameId N：跨域 iframe 直接路由。
  */
-async function fillAllFrames(tabId, allMappings) {
+async function fillAllFrames(tabId, allMappings, profile = null, diagnostics = null) {
   const byFrame = new Map();
   for (const m of allMappings) {
     const fid = m.field?.frameId ?? 0;
@@ -216,19 +307,27 @@ async function fillAllFrames(tabId, allMappings) {
 
   const allResults = [];
   const summary    = { filled: 0, skipped: 0, errors: 0, total: allMappings.length };
+  const reports = [];
 
   for (const [frameId, mappings] of byFrame) {
     try {
-      const resp = await chrome.tabs.sendMessage(
+      const resp = await sendMessageWithBootstrap(
         tabId,
-        { action: 'fillForms', mappings },
-        { frameId }
+        {
+          action: 'fillForms',
+          mappings,
+          profile,
+          diagnostics,
+        },
+        frameId,
+        { retries: 1, retryDelayMs: 150 }
       );
       if (!resp?.success) continue;
       allResults.push(...(resp.data?.results ?? []));
       summary.filled  += resp.data?.summary?.filled  ?? 0;
       summary.skipped += resp.data?.summary?.skipped ?? 0;
       summary.errors  += resp.data?.summary?.errors  ?? 0;
+      if (resp.data?.report) reports.push(resp.data.report);
     } catch (e) {
       console.error('[JobPilot SW] 填写帧', frameId, '失败:', e.message);
       // 帧已销毁（SPA 路由切换），将该帧所有字段计入失败数
@@ -236,5 +335,7 @@ async function fillAllFrames(tabId, allMappings) {
     }
   }
 
-  return { success: true, data: { results: allResults, summary } };
+  const report = mergeFillReports(reports);
+  await saveLastFillReport(report);
+  return { success: true, data: { results: allResults, summary, report } };
 }
