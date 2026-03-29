@@ -1,5 +1,5 @@
-const enumMappingsModulePromise = import(chrome.runtime.getURL('lib/enum-mappings.js'));
-const fillReportModulePromise = import(chrome.runtime.getURL('lib/fill-report.js'));
+const formFillerEnumMappingsModulePromise = import(chrome.runtime.getURL('lib/enum-mappings.js'));
+const formFillerFillReportModulePromise = import(chrome.runtime.getURL('lib/fill-report.js'));
 
 const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
   window.HTMLInputElement.prototype,
@@ -26,6 +26,7 @@ function setInputValue(el, value) {
 }
 
 function setNativeSelectValue(el, value) {
+  if (!el?.options || typeof el.options[Symbol.iterator] !== 'function') return false;
   for (const option of el.options) {
     if (option.value === value || option.text.trim() === value) {
       el.value = option.value;
@@ -268,8 +269,10 @@ function hasMeaningfulFields(entry = {}) {
   return Object.values(entry || {}).some(value => value !== '' && value != null);
 }
 
+const REPEATABLE_PROFILE_SECTIONS = ['education', 'experience', 'projects', 'languages', 'familyMembers'];
+
 function getRepeatTargets(profile = {}) {
-  return ['languages', 'familyMembers']
+  return REPEATABLE_PROFILE_SECTIONS
     .map(section => ({
       section,
       items: Array.isArray(profile[section]) ? profile[section].filter(hasMeaningfulFields) : [],
@@ -301,6 +304,31 @@ async function rerunMatch(profile) {
   return { detectResult, matchResult };
 }
 
+const REPEAT_SECTION_PATTERNS = {
+  education: /(教育经历|教育背景|学校|学历|学位|入学|毕业|education|academic)/i,
+  experience: /(实习经历|工作经历|工作经验|单位名称|职位名称|实习内容|experience|intern)/i,
+  projects: /(在校实践|校内实践|校园实践|项目经历|项目名称|实践名称|实践描述|project|practice)/i,
+  languages: /(语言能力|外语能力|语种|语言类型|掌握程度|听说|读写|language)/i,
+  familyMembers: /(家庭情况|家庭成员|家属|与本人关系|身份类别|家庭所在地|family)/i,
+};
+
+function inferRepeatSectionFromField(field = {}) {
+  for (const [sectionKey, pattern] of Object.entries(REPEAT_SECTION_PATTERNS)) {
+    if (pattern.test(String(field.sectionLabel || ''))) return sectionKey;
+  }
+
+  const fallbackText = [
+    field.label,
+    ...(field.labelCandidates || []).slice(0, 2),
+    field.placeholder,
+  ].filter(Boolean).join(' ');
+
+  for (const [sectionKey, pattern] of Object.entries(REPEAT_SECTION_PATTERNS)) {
+    if (pattern.test(fallbackText)) return sectionKey;
+  }
+  return '';
+}
+
 function extractRepeatKeys(matchResult, sectionKey) {
   const keys = [];
   for (const entry of matchResult?.matched || []) {
@@ -325,6 +353,34 @@ function getRepeatCount(matchResult, sectionKey) {
     if (parsed) indices.add(parsed.index);
   }
   return indices.size;
+}
+
+function getRepeatCountFromDetect(detectResult, sectionKey) {
+  if (!detectResult?.forms?.length) return 0;
+
+  const groupCounts = new Map();
+  const labelCounts = new Map();
+  for (const form of detectResult.forms) {
+    for (const field of form.fields || []) {
+      if (inferRepeatSectionFromField(field) !== sectionKey) continue;
+      if (field.repeatGroupKey) {
+        groupCounts.set(field.repeatGroupKey, (groupCounts.get(field.repeatGroupKey) || 0) + 1);
+      }
+
+      const normalizedLabel = String(field.label || '').trim();
+      if (!normalizedLabel || normalizedLabel === '至今') continue;
+      labelCounts.set(normalizedLabel, (labelCounts.get(normalizedLabel) || 0) + 1);
+    }
+  }
+
+  const groupCount = [...groupCounts.values()].filter(count => count >= 2).length;
+  const labelCount = Math.max(0, ...labelCounts.values());
+
+  // Once detect can distinguish repeat containers, trust the container groups.
+  // Repeated labels like "开始时间 / 结束时间" appear across many sections and
+  // can otherwise inflate the count for sections that only have one visible item.
+  if (groupCount) return groupCount;
+  return labelCount;
 }
 
 function mergeMappings(baseMappings, repeatMappings) {
@@ -363,10 +419,11 @@ async function ensureRepeatableSections(profile, adapter, report, reportUtils) {
   const repeatSupport = {};
 
   for (const target of repeatTargets) {
+    const existingDetectedCount = getRepeatCountFromDetect(latest?.detectResult, target.section);
     const sectionReport = {
       section: target.section,
       expected: target.items.length,
-      existing: getRepeatCount(latest?.matchResult, target.section),
+      existing: existingDetectedCount || getRepeatCount(latest?.matchResult, target.section),
       created: 0,
       filled: 0,
       warnings: [],
@@ -386,6 +443,16 @@ async function ensureRepeatableSections(profile, adapter, report, reportUtils) {
       });
 
       if (!outcome?.created) {
+        const fallbackMatch = await rerunMatch(profile);
+        const fallbackCount = getRepeatCountFromDetect(fallbackMatch?.detectResult, target.section)
+          || getRepeatCount(fallbackMatch?.matchResult, target.section);
+        if (fallbackCount > currentCount) {
+          sectionReport.created += 1;
+          latest = fallbackMatch;
+          currentCount = fallbackCount;
+          guard += 1;
+          continue;
+        }
         sectionReport.warnings.push(
           outcome?.reason
             ? `${target.section}: ${outcome.reason}`
@@ -396,7 +463,8 @@ async function ensureRepeatableSections(profile, adapter, report, reportUtils) {
 
       sectionReport.created += 1;
       latest = await rerunMatch(profile);
-      const nextCount = getRepeatCount(latest?.matchResult, target.section);
+      const nextCount = getRepeatCountFromDetect(latest?.detectResult, target.section)
+        || getRepeatCount(latest?.matchResult, target.section);
       if (nextCount <= currentCount) {
         sectionReport.warnings.push(`${target.section}: repeat_item_created_but_not_detected`);
         break;
@@ -436,7 +504,7 @@ async function normalizeRuntimeValue(fieldEntry, adapter) {
     };
   }
 
-  const enumMappings = await enumMappingsModulePromise;
+  const enumMappings = await formFillerEnumMappingsModulePromise;
   const adapterOverride = adapter?.mapEnumValue?.(getFieldKey(fieldEntry), String(rawValue), {
     field,
     options: field.options,
@@ -499,13 +567,13 @@ async function fillField(fieldEntry, doc, context) {
 
   try {
     if (field.type === 'select') {
-      const adapterHandled = adapter?.setSelectValue?.({ element: el, field, value, context, utils });
+      const adapterHandled = await adapter?.setSelectValue?.({ element: el, field, value, context, utils });
       const ok = adapterHandled == null ? setNativeSelectValue(el, value) : (adapterHandled || setNativeSelectValue(el, value));
       return { fieldId: field.id, status: ok ? 'filled' : 'skipped', message: ok ? '' : 'no_matching_option', key: getFieldKey(fieldEntry) };
     }
 
     if (field.type === 'radio') {
-      const adapterHandled = adapter?.setRadioValue?.({ element: el, field, value, context, utils });
+      const adapterHandled = await adapter?.setRadioValue?.({ element: el, field, value, context, utils });
       const ok = adapterHandled == null ? setNativeRadioValue(el, value, doc) : (adapterHandled || setNativeRadioValue(el, value, doc));
       return { fieldId: field.id, status: ok ? 'filled' : 'skipped', message: ok ? '' : 'no_matching_option', key: getFieldKey(fieldEntry) };
     }
@@ -518,7 +586,7 @@ async function fillField(fieldEntry, doc, context) {
     }
 
     if (field.type === 'date') {
-      const adapterHandled = adapter?.setDateValue?.({ element: el, field, value: formatDate(value), context, utils });
+      const adapterHandled = await adapter?.setDateValue?.({ element: el, field, value: formatDate(value), context, utils });
       if (adapterHandled == null || adapterHandled === false) setInputValue(el, formatDate(value));
       return { fieldId: field.id, status: 'filled', message: '', key: getFieldKey(fieldEntry) };
     }
@@ -557,7 +625,7 @@ function applyFieldOutcomesToRepeatSections(report, results) {
 }
 
 async function fillForms(mappings, options = {}) {
-  const reportUtils = await fillReportModulePromise;
+  const reportUtils = await formFillerFillReportModulePromise;
   const adapter = window.__jobpilotGetSiteAdapter?.({ document, location }) || null;
   const initialDetect = window.__jobpilotDetectForms?.();
   const report = reportUtils.createFillReport({
@@ -571,11 +639,12 @@ async function fillForms(mappings, options = {}) {
   const beforeFillMeta = await adapter?.beforeFill?.({ document, location, mappings, profile: options.profile });
   if (beforeFillMeta?.warnings?.length) report.warnings.push(...beforeFillMeta.warnings);
 
+  const repeatSections = new Set(getRepeatTargets(options.profile || {}).map(item => item.section));
   const repeatResolution = await ensureRepeatableSections(options.profile, adapter, report, reportUtils);
   const repeatMappings = repeatResolution.latestMatch?.matchResult?.matched
     ?.filter(entry => {
       const parsed = parseRepeatPath(entry.key);
-      return parsed && ['languages', 'familyMembers'].includes(parsed.section);
+      return parsed && repeatSections.has(parsed.section);
     })
     .map(entry => ({ ...entry, source: 'regex' })) || [];
 
@@ -713,7 +782,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       try {
         const result = await fillField({ field: message.field, value: message.value }, document, {
           adapter: window.__jobpilotGetSiteAdapter?.({ document, location }) || null,
-          report: (await fillReportModulePromise).createFillReport({
+          report: (await formFillerFillReportModulePromise).createFillReport({
             hostname: location.hostname,
             pageTitle: document.title,
             adapterUsed: window.__jobpilotGetSiteAdapter?.({ document, location })?.id || 'generic',

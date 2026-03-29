@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### 2026-03-29
+
+- Generalized repeat-section creation so `education`, `languages`, and `familyMembers` reuse shared add-button detection instead of site-specific hardcoding
+- Moved repeat add-button discovery into the base site adapter and kept site adapters focused on section keywords and control interaction
+- Improved repeat-section detection with stronger `repeatGroupKey` handling and duplicate-id-safe selectors for DOMs that reuse the same `id`
+- Tightened repeat counting so sections prefer detected repeat containers over repeated generic labels like `startDate` and `endDate`
+- Verified the China Taiping real form flow can now auto-add and fill the second `education`, `languages`, and `familyMembers` entries
+- Kept frame fill timeouts and error propagation in the service worker so stuck frame writes fail fast instead of hanging indefinitely
+
 ## v0.5.0 — Phase 5 站点适配与发布整理
 
 ### Functional enhancements

@@ -28,6 +28,8 @@ const LABEL_NOISE_PATTERNS = [
   /^[*：:（）()\-\s]+$/,
 ];
 
+const SECTION_TITLE_PATTERNS = /(信息|资料|经历|背景|能力|情况|说明|声明|附加|补充|profile|contact|education|experience|project|language|family|summary)/i;
+
 function normalizeText(text, maxLen = 180) {
   return String(text || '')
     .replace(/\s+/g, ' ')
@@ -114,6 +116,53 @@ function collectParentTextNodes(el) {
   return results;
 }
 
+function collectNodeTexts(node, limit = 6) {
+  if (!(node instanceof Element)) return [];
+  const texts = [];
+  const direct = cleanLabelText(cloneTextWithoutFields(node));
+  if (isMeaningfulLabelText(direct)) texts.push(direct);
+
+  const descendants = Array.from(node.querySelectorAll(LABEL_ELEMENT_SELECTOR))
+    .filter(child => child instanceof Element && !nodeHasFieldControls(child))
+    .slice(0, limit);
+
+  for (const child of descendants) {
+    const text = cleanLabelText(cloneTextWithoutFields(child));
+    if (isMeaningfulLabelText(text)) texts.push(text);
+  }
+
+  return texts;
+}
+
+function collectAncestorSiblingTexts(el, maxDepth = 10, siblingLimit = 4) {
+  const results = [];
+  let current = el;
+  let depth = 0;
+
+  while (current?.parentElement && depth < maxDepth) {
+    let previous = current.previousElementSibling;
+    let guard = 0;
+    while (previous && guard < siblingLimit) {
+      results.push(...collectNodeTexts(previous));
+      previous = previous.previousElementSibling;
+      guard += 1;
+    }
+
+    const parent = current.parentElement;
+    const siblings = Array.from(parent.children)
+      .filter(node => node !== current)
+      .slice(0, siblingLimit);
+    for (const sibling of siblings) {
+      results.push(...collectNodeTexts(sibling));
+    }
+
+    current = parent;
+    depth += 1;
+  }
+
+  return uniqueTexts(results);
+}
+
 function collectContainerLabelTexts(el) {
   const containers = [];
   const direct = findFieldContainer(el);
@@ -188,10 +237,20 @@ function extractLabelCandidates(el, doc) {
   candidates.push(...collectPreviousSiblingTexts(el));
   candidates.push(...collectParentTextNodes(el));
   candidates.push(...collectContainerLabelTexts(el));
+  candidates.push(...collectAncestorSiblingTexts(el));
   candidates.push(el.title || '');
   candidates.push(el.placeholder || '');
 
   return uniqueTexts(candidates);
+}
+
+function hasUniqueId(doc, id) {
+  if (!id) return false;
+  try {
+    return doc.querySelectorAll(`[id="${CSS.escape(id)}"]`).length === 1;
+  } catch (_) {
+    return false;
+  }
 }
 
 /**
@@ -201,7 +260,7 @@ function extractLabelCandidates(el, doc) {
  * @returns {string}
  */
 function buildSelector(el, doc) {
-  if (el.id) return `#${CSS.escape(el.id)}`;
+  if (el.id && hasUniqueId(doc, el.id)) return `#${CSS.escape(el.id)}`;
   const tag = el.tagName.toLowerCase();
   const parent = el.parentElement;
   if (!parent) return tag;
@@ -221,7 +280,7 @@ function buildSelector(el, doc) {
  * @returns {string}
  */
 function buildXPath(el) {
-  if (el.id) return `//*[@id="${el.id}"]`;
+  if (el.id && hasUniqueId(el.ownerDocument || document, el.id)) return `//*[@id="${el.id}"]`;
   const parts = [];
   let node = el;
   while (node && node.nodeType === Node.ELEMENT_NODE) {
@@ -330,12 +389,23 @@ function extractSectionLabel(el) {
 
   let current = el.parentElement;
   let depth = 0;
-  while (current && depth < 5) {
+  while (current && depth < 10) {
     const heading = current.querySelector('h1, h2, h3, h4, h5, h6, .section-title, .form-section-title');
     if (heading) {
       const text = normalizeText(heading.textContent || '', 60);
       if (text) return text;
     }
+
+    let previous = current.previousElementSibling;
+    let guard = 0;
+    while (previous && guard < 3) {
+      const texts = collectNodeTexts(previous, 4);
+      const sectionText = texts.find(text => SECTION_TITLE_PATTERNS.test(text));
+      if (sectionText) return sectionText;
+      previous = previous.previousElementSibling;
+      guard += 1;
+    }
+
     current = current.parentElement;
     depth++;
   }
@@ -362,6 +432,47 @@ function extractContextText(el) {
 
 function findFieldContainer(el) {
   return el.closest(FIELD_CONTAINER_SELECTOR);
+}
+
+function buildRepeatGroupKey(el, doc) {
+  let current = el.parentElement;
+  let depth = 0;
+
+  while (current && current !== document.body && depth < 24) {
+    const controlCount = current.querySelectorAll('input, select, textarea, [role="combobox"], [role="textbox"]').length;
+    if (controlCount >= 2 && current.matches?.('form, .form[name], div.form')) {
+      return buildSelector(current, doc);
+    }
+    current = current.parentElement;
+    depth += 1;
+  }
+
+  const identityCandidates = [];
+  const structuralCandidates = [];
+  current = el.parentElement;
+  depth = 0;
+
+  while (current && current !== document.body && depth < 24) {
+    const controlCount = current.querySelectorAll('input, select, textarea, [role="combobox"], [role="textbox"]').length;
+    const identity = current.id
+      || current.getAttribute('data-id')
+      || current.getAttribute('data-key')
+      || current.getAttribute('data-index')
+      || '';
+    const className = normalizeText(current.className || '', 120);
+    const looksStructured = Boolean(identity) || /(item|entry|card|panel|block|module|section|group|row|form)/i.test(className);
+
+    if (controlCount >= 2 && looksStructured) {
+      if (identity) identityCandidates.push(identity);
+      else structuralCandidates.push(`${current.tagName.toLowerCase()}:${className}`);
+    }
+
+    current = current.parentElement;
+    depth += 1;
+  }
+
+  if (identityCandidates.length) return identityCandidates[identityCandidates.length - 1];
+  return structuralCandidates[0] || '';
 }
 
 /**
@@ -448,6 +559,7 @@ function describeField(el, doc, formId, fieldIndex, adapter = null) {
     xpath: buildXPath(el),
     selector: buildSelector(el, doc),
     containerSelector: container ? buildSelector(container, doc) : '',
+    repeatGroupKey: buildRepeatGroupKey(el, doc),
   };
 
   const patch = adapter?.enrichFieldDescriptor?.({
@@ -476,7 +588,38 @@ function describeField(el, doc, formId, fieldIndex, adapter = null) {
     descriptor.label = cleanLabelText(descriptor.label) || descriptor.labelCandidates?.[0] || descriptor.label;
   }
 
+  if (!descriptor.label && descriptor.labelCandidates?.length) {
+    descriptor.label = descriptor.labelCandidates[0];
+  }
+
   return descriptor;
+}
+
+function propagateGroupSectionLabels(fields = []) {
+  const groups = new Map();
+
+  for (const field of fields) {
+    if (!field.repeatGroupKey) continue;
+    const group = groups.get(field.repeatGroupKey) || [];
+    group.push(field);
+    groups.set(field.repeatGroupKey, group);
+  }
+
+  for (const groupFields of groups.values()) {
+    const sectionCounts = new Map();
+    for (const field of groupFields) {
+      if (!field.sectionLabel) continue;
+      sectionCounts.set(field.sectionLabel, (sectionCounts.get(field.sectionLabel) || 0) + 1);
+    }
+
+    const bestSection = [...sectionCounts.entries()]
+      .sort((left, right) => right[1] - left[1])[0]?.[0] || '';
+    if (!bestSection) continue;
+
+    for (const field of groupFields) {
+      if (!field.sectionLabel) field.sectionLabel = bestSection;
+    }
+  }
 }
 
 /**
@@ -522,6 +665,7 @@ function scanDocument(doc, source = 'main', iframePath = '') {
     }
 
     if (fields.length > 0) {
+      propagateGroupSectionLabels(fields);
       forms.push({
         id: formId,
         name: form.name || form.id || form.getAttribute('action') || '',
@@ -548,6 +692,7 @@ function scanDocument(doc, source = 'main', iframePath = '') {
       }
     }
     if (fields.length > 0) {
+      propagateGroupSectionLabels(fields);
       forms.push({
         id: formId,
         name: '_standalone',

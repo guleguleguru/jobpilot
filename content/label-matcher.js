@@ -1,176 +1,166 @@
 const enumMappingsModulePromise = import(chrome.runtime.getURL('lib/enum-mappings.js'));
 
 const FIELD_RULES = [
-  { pattern: /^(姓名|名字|full\s*name|applicant\s*name)$/i, key: 'personal.fullName' },
-  { pattern: /(姓名拼音|名字拼音|name\s*pinyin|full\s*name\s*pinyin|pinyin)/i, key: 'personal.fullNamePinyin' },
-  { pattern: /(英文名|english\s*name)/i, key: 'personal.englishName' },
-  { pattern: /(last\s*name|family\s*name|surname|姓)/i, key: 'personal.lastName' },
-  { pattern: /(first\s*name|given\s*name|名)/i, key: 'personal.firstName' },
-  { pattern: /(性别|gender|sex)/i, key: 'personal.gender' },
-  { pattern: /(出生日期|生日|birth|date\s*of\s*birth)/i, key: 'personal.birthDate' },
-  { pattern: /(年龄|age)/i, key: 'personal.age' },
-  { pattern: /(国籍|nationality|citizenship)/i, key: 'personal.nationality' },
-  { pattern: /(民族|ethnicity)/i, key: 'personal.ethnicity' },
-  { pattern: /(籍贯|native\s*place|hometown|生源地)/i, key: 'personal.nativePlace' },
-  { pattern: /(政治面貌|政治身份|political\s*status|party)/i, key: 'personal.politicalStatus' },
-  { pattern: /(入党时间|party\s*join)/i, key: 'personal.partyJoinDate' },
-  { pattern: /(婚姻状况|marital)/i, key: 'personal.maritalStatus' },
-  { pattern: /(健康状况|health)/i, key: 'personal.healthStatus' },
-  { pattern: /(血型|blood\s*type)/i, key: 'personal.bloodType' },
-  { pattern: /(身高|height)/i, key: 'personal.heightCm' },
-  { pattern: /(体重|weight)/i, key: 'personal.weightKg' },
-  { pattern: /(应届|往届|fresh\s*graduate|graduate\s*status)/i, key: 'personal.freshGraduateStatus' },
-  { pattern: /(海外留学|overseas\s*study|study\s*abroad)/i, key: 'personal.hasOverseasStudy' },
+  { key: 'personal.fullName', aliases: ['姓名', '名字', '中文姓名', 'full name', 'applicant name', 'candidate name'] },
+  { key: 'personal.fullNamePinyin', aliases: ['姓名拼音', '姓名全拼', '拼音', 'name pinyin', 'full name pinyin'] },
+  { key: 'personal.englishName', aliases: ['英文名', '英文姓名', 'english name'] },
+  { key: 'personal.lastName', aliases: ['姓', '姓氏', 'family name', 'last name', 'surname'] },
+  { key: 'personal.firstName', aliases: ['名', '名字', 'given name', 'first name'] },
+  { key: 'personal.gender', aliases: ['性别', 'gender', 'sex'] },
+  { key: 'personal.birthDate', aliases: ['出生日期', '出生年月', '生日', 'birth date', 'date of birth', 'dob'] },
+  { key: 'personal.age', aliases: ['年龄', 'age'] },
+  { key: 'personal.nationality', aliases: ['国籍', 'nationality', 'citizenship'] },
+  { key: 'personal.ethnicity', aliases: ['民族', 'ethnicity'] },
+  { key: 'personal.nativePlace', aliases: ['籍贯', '生源地', 'native place', 'hometown'] },
+  { key: 'personal.politicalStatus', aliases: ['政治面貌', '政治身份', '党派', 'political status', 'party affiliation'] },
+  { key: 'personal.partyJoinDate', aliases: ['入党时间', '加入党派时间', 'party join date'] },
+  { key: 'personal.maritalStatus', aliases: ['婚姻状况', 'marital status'] },
+  { key: 'personal.healthStatus', aliases: ['健康状况', 'health status'] },
+  { key: 'personal.bloodType', aliases: ['血型', 'blood type'] },
+  { key: 'personal.heightCm', aliases: ['身高', 'height'] },
+  { key: 'personal.weightKg', aliases: ['体重', 'weight'] },
+  { key: 'personal.freshGraduateStatus', aliases: ['应届往届', '应届生状态', '毕业生状态', 'fresh graduate', 'graduate status'] },
+  { key: 'personal.hasOverseasStudy', aliases: ['海外留学经历有无', '是否海外留学', '留学经历', 'overseas study', 'study abroad'] },
 
-  { pattern: /(证件类型|document\s*type|id\s*type)/i, key: 'identity.documentType' },
-  { pattern: /(证件号码|身份证|id\s*(card|number)|document\s*number)/i, key: 'identity.documentNumber' },
+  { key: 'identity.documentType', aliases: ['证件类型', '证件类别', 'id type', 'document type'] },
+  { key: 'identity.documentNumber', aliases: ['证件号码', '证件号', '身份证号', '身份证号码', 'id number', 'document number', 'identity card number'] },
 
-  { pattern: /(手机|电话|mobile|phone|tel(?!ephone))/i, key: 'contact.phone' },
-  { pattern: /(邮箱|e-?mail|电子邮件)/i, key: 'contact.email' },
-  { pattern: /(固定电话|landline)/i, key: 'contact.landline' },
-  { pattern: /(通讯地址|联系地址|mailing\s*address)/i, key: 'contact.address' },
-  { pattern: /(邮编|postal\s*code|zip)/i, key: 'contact.postalCode' },
-  { pattern: /(微信|wechat)/i, key: 'contact.wechat' },
-  { pattern: /(紧急联系人(?!电话)|emergency\s*contact)/i, key: 'contact.emergencyContactName' },
-  { pattern: /(紧急联系人电话|emergency\s*phone)/i, key: 'contact.emergencyContactPhone' },
+  { key: 'contact.phone', aliases: ['手机号', '手机号码', '联系电话', '联系电话号码', 'mobile', 'phone', 'telephone'] },
+  { key: 'contact.email', aliases: ['邮箱', '电子邮箱', 'email', 'e-mail'] },
+  { key: 'contact.landline', aliases: ['固定电话', 'landline', 'home phone'] },
+  { key: 'contact.address', aliases: ['联系地址', '通讯地址', 'mailing address', 'contact address'] },
+  { key: 'contact.postalCode', aliases: ['邮编', '邮政编码', 'postal code', 'zip code'] },
+  { key: 'contact.wechat', aliases: ['微信', 'wechat', 'weixin'] },
+  { key: 'contact.emergencyContactName', aliases: ['紧急联系人', 'emergency contact'] },
+  { key: 'contact.emergencyContactPhone', aliases: ['紧急联系电话', '紧急联系人电话', 'emergency phone', 'emergency contact phone'] },
 
-  { pattern: /(现居住地|当前所在地|居住城市|current\s*city|location)/i, key: 'residency.currentCity' },
-  { pattern: /(现住址|当前地址|current\s*address)/i, key: 'residency.currentAddress' },
-  { pattern: /(家庭地址|home\s*address)/i, key: 'residency.homeAddress' },
-  { pattern: /(户口性质|household\s*type|hukou\s*type)/i, key: 'residency.householdType' },
-  { pattern: /(户籍地址|户口所在地|household\s*address|hukou\s*address)/i, key: 'residency.householdAddress' },
-  { pattern: /(派出所|police\s*station)/i, key: 'residency.policeStation' },
+  { key: 'residency.currentCity', aliases: ['现居住地', '当前所在地', '所在城市', '现居城市', 'current city', 'current location'] },
+  { key: 'residency.currentAddress', aliases: ['现住地址', '现居地址', '当前地址', 'current address', 'residential address'] },
+  { key: 'residency.homeAddress', aliases: ['家庭地址', 'home address'] },
+  { key: 'residency.householdType', aliases: ['户口性质', '户籍性质', 'hukou type', 'household type'] },
+  { key: 'residency.householdAddress', aliases: ['户籍地址', '户口所在地', 'household address', 'hukou address'] },
+  { key: 'residency.policeStation', aliases: ['户口所在派出所', '派出所', 'police station'] },
 
-  { pattern: /(期望城市|意向城市|工作城市|preferred\s*city|desired\s*location)/i, key: 'jobPreferences.expectedLocations' },
-  { pattern: /(期望岗位|意向岗位|expected\s*position|desired\s*position)/i, key: 'jobPreferences.expectedPositions' },
-  { pattern: /(期望薪资|薪资要求|expected\s*salary|compensation)/i, key: 'jobPreferences.expectedSalary' },
-  { pattern: /(到岗时间|可入职时间|available\s*(from|date))/i, key: 'jobPreferences.availableFrom' },
-  { pattern: /(实习时长|实习周期|intern(ship)?\s*duration)/i, key: 'jobPreferences.internshipDuration' },
-  { pattern: /(求职状态|job\s*status)/i, key: 'jobPreferences.jobStatus' },
-  { pattern: /(毕业年份|graduation\s*year)/i, key: 'graduationYear' },
+  { key: 'jobPreferences.expectedLocations', aliases: ['意向城市', '期望城市', '工作城市', 'preferred city', 'desired location'] },
+  { key: 'jobPreferences.expectedPositions', aliases: ['意向职位', '期望岗位', '应聘岗位', 'desired position', 'expected position'] },
+  { key: 'jobPreferences.expectedSalary', aliases: ['期望薪资', '薪资要求', 'expected salary', 'salary expectation'] },
+  { key: 'jobPreferences.availableFrom', aliases: ['到岗时间', '可入职时间', '最快到岗时间', 'available from', 'start availability'] },
+  { key: 'jobPreferences.internshipDuration', aliases: ['实习时长', '实习周期', 'internship duration'] },
+  { key: 'jobPreferences.jobStatus', aliases: ['求职状态', '当前状态', 'job status'] },
+  { key: 'graduationYear', aliases: ['毕业年份', '毕业时间', 'graduation year'] },
 
-  { pattern: /(学校|school|university|college|院校)/i, group: 'education', subkey: 'school' },
-  { pattern: /(学校所在国家|院校所在国家|country)/i, group: 'education', subkey: 'schoolCountry' },
-  { pattern: /(学历|degree|education\s*level)/i, group: 'education', subkey: 'degree' },
-  { pattern: /(学位|education\s*level)/i, group: 'education', subkey: 'educationLevel' },
-  { pattern: /(专业|major)/i, group: 'education', subkey: 'major' },
-  { pattern: /(入学|start\s*date|enrollment)/i, group: 'education', subkey: 'startDate' },
-  { pattern: /(毕业|end\s*date|graduation)/i, group: 'education', subkey: 'endDate' },
-  { pattern: /(教育形式|学习形式|study\s*mode)/i, group: 'education', subkey: 'studyMode' },
-  { pattern: /(gpa|绩点|平均分)/i, group: 'education', subkey: 'gpa' },
-  { pattern: /(排名|rank)/i, group: 'education', subkey: 'ranking' },
-  { pattern: /(奖学金|scholarship)/i, group: 'education', subkey: 'scholarships' },
-  { pattern: /(在校职务|student\s*position)/i, group: 'education', subkey: 'campusPositions' },
-  { pattern: /(在校实践|校内实践|campus\s*practice)/i, group: 'education', subkey: 'campusPractice' },
+  { group: 'education', subkey: 'startDate', aliases: ['开始时间', '入学时间', '入学日期', '教育开始时间', 'start date', 'enrollment date'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'endDate', aliases: ['结束时间', '毕业时间', '毕业日期', '教育结束时间', 'end date', 'graduation date'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'school', aliases: ['学校', '学校名称', '院校', '院校名称', 'university', 'college', 'school'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'schoolCountry', aliases: ['学校所在国家', '院校所在国家', 'country of school', 'school country'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'major', aliases: ['专业', '专业名称', 'major', 'field of study'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'degree', aliases: ['学历', 'degree', 'education level'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'educationLevel', aliases: ['学位', 'degree type', 'academic degree'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'studyMode', aliases: ['学历取得方式', '教育形式', '学习形式', 'study mode'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'gpa', aliases: ['gpa', '绩点', '平均成绩'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'ranking', aliases: ['排名', 'rank', 'class rank'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'scholarships', aliases: ['奖学金', 'scholarship'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'campusPositions', aliases: ['在校职务', '学生干部', 'campus position', 'student position'], sectionBuckets: ['education'] },
+  { group: 'education', subkey: 'campusPractice', aliases: ['在校实践', '校内实践', '校园实践', 'campus practice'], sectionBuckets: ['education', 'projects'] },
 
-  { pattern: /(公司|单位|employer|company)/i, group: 'experience', subkey: 'company' },
-  { pattern: /(部门|department)/i, group: 'experience', subkey: 'department' },
-  { pattern: /(职位|岗位|job\s*title|position)/i, group: 'experience', subkey: 'title' },
-  { pattern: /(工作地点|location)/i, group: 'experience', subkey: 'location' },
-  { pattern: /(工作描述|岗位职责|description|responsibilities)/i, group: 'experience', subkey: 'description' },
-  { pattern: /(业绩|achievement)/i, group: 'experience', subkey: 'achievements' },
-  { pattern: /(开始时间|start\s*date)/i, group: 'experience', subkey: 'startDate' },
-  { pattern: /(结束时间|end\s*date)/i, group: 'experience', subkey: 'endDate' },
+  { group: 'experience', subkey: 'company', aliases: ['公司', '单位名称', '工作单位', 'employer', 'company'], sectionBuckets: ['experience'] },
+  { group: 'experience', subkey: 'department', aliases: ['部门', 'department'], sectionBuckets: ['experience'] },
+  { group: 'experience', subkey: 'title', aliases: ['职位', '职位名称', '岗位', 'job title', 'position'], sectionBuckets: ['experience'] },
+  { group: 'experience', subkey: 'location', aliases: ['工作地点', 'location'], sectionBuckets: ['experience'] },
+  { group: 'experience', subkey: 'startDate', aliases: ['开始时间', '入职时间', 'start date'], sectionBuckets: ['experience'] },
+  { group: 'experience', subkey: 'endDate', aliases: ['结束时间', '离职时间', 'end date'], sectionBuckets: ['experience'] },
+  { group: 'experience', subkey: 'description', aliases: ['工作内容', '实习内容', '职责描述', '岗位职责', 'description', 'responsibilities'], sectionBuckets: ['experience'] },
+  { group: 'experience', subkey: 'achievements', aliases: ['工作业绩', '成果', 'achievement', 'achievements'], sectionBuckets: ['experience'] },
 
-  { pattern: /(项目名称|project\s*name)/i, group: 'projects', subkey: 'name' },
-  { pattern: /(项目角色|role)/i, group: 'projects', subkey: 'role' },
-  { pattern: /(项目时间|项目开始|project\s*date)/i, group: 'projects', subkey: 'startDate' },
-  { pattern: /(项目结束|project\s*end)/i, group: 'projects', subkey: 'endDate' },
-  { pattern: /(项目描述|project\s*description)/i, group: 'projects', subkey: 'description' },
-  { pattern: /(技术栈|关键字|tech\s*stack)/i, group: 'projects', subkey: 'techStack' },
+  { group: 'projects', subkey: 'startDate', aliases: ['开始时间', '项目开始时间', '实践开始时间', 'start date'], sectionBuckets: ['projects'] },
+  { group: 'projects', subkey: 'endDate', aliases: ['结束时间', '项目结束时间', '实践结束时间', 'end date'], sectionBuckets: ['projects'] },
+  { group: 'projects', subkey: 'name', aliases: ['项目名称', '实践名称', 'project name'], sectionBuckets: ['projects'] },
+  { group: 'projects', subkey: 'role', aliases: ['项目角色', '担任角色', 'role'], sectionBuckets: ['projects'] },
+  { group: 'projects', subkey: 'description', aliases: ['项目描述', '实践描述', 'project description'], sectionBuckets: ['projects'] },
+  { group: 'projects', subkey: 'techStack', aliases: ['技术栈', '关键技术', 'tech stack'], sectionBuckets: ['projects'] },
 
-  { pattern: /(语言类型|语种|language)/i, group: 'languages', subkey: 'language' },
-  { pattern: /(掌握程度|语言水平|proficiency|level)/i, group: 'languages', subkey: 'proficiency' },
-  { pattern: /(听说|listening|speaking)/i, group: 'languages', subkey: 'listeningSpeaking' },
-  { pattern: /(读写|reading|writing)/i, group: 'languages', subkey: 'readingWriting' },
+  { group: 'languages', subkey: 'language', aliases: ['语言类型', '语种', 'language'], sectionBuckets: ['languages'] },
+  { group: 'languages', subkey: 'proficiency', aliases: ['掌握程度', '语言水平', '熟练程度', 'proficiency', 'level'], sectionBuckets: ['languages'] },
+  { group: 'languages', subkey: 'listeningSpeaking', aliases: ['听说', '听力口语', 'listening speaking'], sectionBuckets: ['languages'] },
+  { group: 'languages', subkey: 'readingWriting', aliases: ['读写', '阅读写作', 'reading writing'], sectionBuckets: ['languages'] },
 
-  { pattern: /(家庭成员关系|relation)/i, group: 'familyMembers', subkey: 'relation' },
-  { pattern: /(家庭成员姓名|member\s*name)/i, group: 'familyMembers', subkey: 'name' },
-  { pattern: /(家庭成员出生日期|family.*birth)/i, group: 'familyMembers', subkey: 'birthDate' },
-  { pattern: /(家庭成员政治面貌|family.*political)/i, group: 'familyMembers', subkey: 'politicalStatus' },
-  { pattern: /(身份类别|identity\s*type)/i, group: 'familyMembers', subkey: 'identityType' },
-  { pattern: /(工作单位|family.*employer)/i, group: 'familyMembers', subkey: 'employer' },
-  { pattern: /(职务|job\s*title)/i, group: 'familyMembers', subkey: 'jobTitle' },
-  { pattern: /(状态|status)/i, group: 'familyMembers', subkey: 'status' },
-  { pattern: /(家庭所在地|family.*location)/i, group: 'familyMembers', subkey: 'location' },
+  { group: 'familyMembers', subkey: 'relation', aliases: ['与本人关系', '关系', 'relation'], sectionBuckets: ['family'] },
+  { group: 'familyMembers', subkey: 'name', aliases: ['姓名', '成员姓名', 'family member name'], sectionBuckets: ['family'] },
+  { group: 'familyMembers', subkey: 'birthDate', aliases: ['出生日期', 'family birth date', 'birth date'], sectionBuckets: ['family'] },
+  { group: 'familyMembers', subkey: 'politicalStatus', aliases: ['政治面貌', 'political status'], sectionBuckets: ['family'] },
+  { group: 'familyMembers', subkey: 'identityType', aliases: ['身份类别', 'identity type'], sectionBuckets: ['family'] },
+  { group: 'familyMembers', subkey: 'employer', aliases: ['工作单位', 'employer', 'company'], sectionBuckets: ['family'] },
+  { group: 'familyMembers', subkey: 'jobTitle', aliases: ['职务', '职位', 'job title', 'position'], sectionBuckets: ['family'] },
+  { group: 'familyMembers', subkey: 'status', aliases: ['存在状态', '状态', 'status'], sectionBuckets: ['family'] },
+  { group: 'familyMembers', subkey: 'location', aliases: ['家庭所在地', '所在地', 'location'], sectionBuckets: ['family'] },
 
-  { pattern: /(证书|certificate|credential)/i, group: 'certificates', subkey: 'name' },
-  { pattern: /(证书颁发机构|issuer)/i, group: 'certificates', subkey: 'issuer' },
-  { pattern: /(证书时间|issue\s*date)/i, group: 'certificates', subkey: 'issueDate' },
-  { pattern: /(证书编号|credential\s*id)/i, group: 'certificates', subkey: 'credentialId' },
+  { group: 'certificates', subkey: 'name', aliases: ['证书', '资格证书', 'certificate', 'credential'] },
+  { group: 'certificates', subkey: 'issuer', aliases: ['颁发机构', '发证机构', 'issuer'] },
+  { group: 'certificates', subkey: 'issueDate', aliases: ['发证时间', '证书时间', 'issue date'] },
+  { group: 'certificates', subkey: 'credentialId', aliases: ['证书编号', 'credential id', 'certificate number'] },
 
-  { pattern: /(奖项|荣誉|award|honor)/i, group: 'awards', subkey: 'name' },
-  { pattern: /(颁发单位|award\s*issuer)/i, group: 'awards', subkey: 'issuer' },
-  { pattern: /(获奖年份|award\s*year)/i, group: 'awards', subkey: 'year' },
-  { pattern: /(奖项描述|award\s*description)/i, group: 'awards', subkey: 'description' },
+  { group: 'awards', subkey: 'name', aliases: ['奖项', '荣誉', 'award', 'honor'] },
+  { group: 'awards', subkey: 'issuer', aliases: ['颁奖机构', 'award issuer', 'issuer'] },
+  { group: 'awards', subkey: 'year', aliases: ['获奖年份', 'award year', 'year'] },
+  { group: 'awards', subkey: 'description', aliases: ['奖项描述', 'award description'] },
 
-  { pattern: /(技能|专业技能|technical\s*skills|expertise)/i, key: 'skills' },
-  { pattern: /(自我评价|自我介绍|个人评价|个人简介|个人优势|about\s*me|summary)/i, key: 'selfIntro' },
-  { pattern: /(简历|resume|cv|附件)/i, key: '_resumeFile', isFile: true },
+  { key: 'skills', aliases: ['技能', '专业技能', 'technical skills', 'skills', 'expertise'] },
+  { key: 'selfIntro', aliases: ['自我评价', '自我介绍', '个人评价', '个人优势', 'summary', 'about me'] },
+  { key: '_resumeFile', aliases: ['简历', '附件简历', '上传简历', 'resume', 'cv'], isFile: true },
 ];
 
 const REQUIRED_KEYWORDS = /(必填|required|\*)/i;
-const SENSITIVE_KEYWORDS = /(身份证|证件号码|婚姻|健康|血型|政治面貌|户口|户籍|家庭成员|紧急联系人)/i;
-const MANUAL_ONLY_PREFIXES = [
+const HIGH_RISK_PREFIXES = [
   'identity.',
   'contact.emergencyContact',
+  'familyMembers',
   'residency.household',
   'residency.policeStation',
-  'personal.politicalStatus',
-  'personal.partyJoinDate',
   'personal.maritalStatus',
   'personal.healthStatus',
   'personal.bloodType',
-  'personal.heightCm',
-  'personal.weightKg',
-  'personal.nationality',
-  'personal.ethnicity',
-  'personal.freshGraduateStatus',
-  'personal.hasOverseasStudy',
-  'familyMembers',
-  'jobPreferences',
 ];
+const MANUAL_ONLY_PREFIXES = [];
 const TOP_RULE_CANDIDATES = 5;
-const FALLBACK_MATCH_THRESHOLD = 5.2;
-const FALLBACK_MATCH_MIN_GAP = 0.85;
-const HIGH_RISK_MATCH_THRESHOLD = 7.5;
-const HIGH_RISK_EXACT_ALIAS_THRESHOLD = 6.5;
+const MATCH_THRESHOLD = 4.2;
+const HIGH_RISK_MATCH_THRESHOLD = 6.2;
+const MATCH_MIN_GAP = 0.75;
 
 const SECTION_BUCKET_DEFINITIONS = [
   {
     bucket: 'personal',
-    pattern: /(个人信息|基本信息|联系信息|联系方式)/i,
+    pattern: /(个人信息|基本信息|联系方式|联系信息|personal|contact)/i,
     keyPatterns: [/^personal\./, /^identity\./, /^contact\./, /^residency\./],
   },
   {
     bucket: 'education',
-    pattern: /(教育经历|教育背景|学校)/i,
-    keyPatterns: [/^education\[/, /^graduationYear$/, /^personal\.hasOverseasStudy$/],
+    pattern: /(教育经历|教育背景|学校|学历|学位|education|academic)/i,
+    keyPatterns: [/^education\[/, /^graduationYear$/],
   },
   {
     bucket: 'projects',
-    pattern: /(在校实践|校内实践|项目经历|项目经验)/i,
+    pattern: /(在校实践|校内实践|校园实践|项目经历|项目经验|project|practice)/i,
     keyPatterns: [/^projects\[/, /^education\[\d+\]\.(campusPositions|campusPractice)$/],
   },
   {
     bucket: 'experience',
-    pattern: /(实习经历|工作经历|职业经历|实践经历)/i,
+    pattern: /(实习经历|工作经历|职业经历|工作经验|intern|experience|work)/i,
     keyPatterns: [/^experience\[/],
   },
   {
     bucket: 'languages',
-    pattern: /(语言能力|外语能力|语种|语言水平)/i,
+    pattern: /(语言能力|外语能力|语种|听说|读写|language)/i,
     keyPatterns: [/^languages\[/],
   },
   {
     bucket: 'family',
-    pattern: /(家庭情况|家庭成员|家属)/i,
+    pattern: /(家庭情况|家庭成员|家属|亲属|与本人关系|身份类别|存在状态|家庭所在地|family)/i,
     keyPatterns: [/^familyMembers\[/],
   },
   {
     bucket: 'additional',
-    pattern: /(附加信息|补充信息|其他信息|应聘者声明|声明)/i,
-    keyPatterns: [/^jobPreferences\./, /^graduationYear$/, /^selfIntro$/],
+    pattern: /(附加信息|补充信息|其他信息|声明|additional)/i,
+    keyPatterns: [/^jobPreferences\./, /^selfIntro$/],
   },
 ];
 
@@ -178,90 +168,25 @@ function normalizeSearchText(value = '') {
   return String(value || '')
     .toLowerCase()
     .replace(/\s+/g, ' ')
-    .replace(/[()（）\-_/\\,.;:：，。'"`~!@#$%^&*+=?|[\]{}<>]/g, ' ')
+    .replace(/[()（）\-_/\\,.;:：，。?"'`~!@#$%^&*+=?|[\]{}<>]/g, ' ')
     .trim();
 }
 
+function normalizeComparable(value = '') {
+  return normalizeSearchText(value).replace(/\s+/g, '');
+}
+
 function uniqueStrings(items = []) {
-  return [...new Set(items.filter(Boolean))];
+  return [...new Set((items || []).filter(Boolean))];
 }
 
 function camelToTerms(value = '') {
   return String(value || '')
-    .replace(/\[\]/g, ' ')
+    .replace(/\[(\d*)\]/g, ' ')
     .replace(/\./g, ' ')
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .toLowerCase()
     .trim();
-}
-
-function cleanRegexAlias(source = '') {
-  return source
-    .replace(/\(\?![^)]*\)/g, '')
-    .replace(/\(\?<![^)]*\)/g, '')
-    .replace(/\(\?<=?[^)]*\)/g, '')
-    .replace(/\\s[\*\+\?]?/g, '')
-    .replace(/\\b/g, '')
-    .replace(/\\d[\*\+\?]?/g, '')
-    .replace(/\\w[\*\+\?]?/g, '')
-    .replace(/\[[^\]]*\]/g, ' ')
-    .replace(/[()*+?^$]/g, ' ')
-    .replace(/\\/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function extractPatternAliases(pattern) {
-  const source = pattern?.source || '';
-  return uniqueStrings(
-    source
-      .split('|')
-      .map(part => cleanRegexAlias(part))
-      .filter(alias => alias.length >= 2)
-  );
-}
-
-function buildRuleCandidateIndex(rules = []) {
-  const docs = rules.map((rule, index) => {
-    const previewKey = rule.key || `${rule.group}[].${rule.subkey}`;
-    const aliases = uniqueStrings([
-      ...extractPatternAliases(rule.pattern),
-      camelToTerms(rule.key || ''),
-      camelToTerms(rule.group || ''),
-      camelToTerms(rule.subkey || ''),
-      previewKey.replace(/\[\]/g, '[]'),
-    ].filter(Boolean));
-    const searchText = aliases.join(' ');
-    const tokens = tokenizeSearchText(searchText);
-    const tokenSet = new Set(tokens);
-    const ngrams = buildCharNgrams(searchText);
-    return {
-      index,
-      rule,
-      previewKey,
-      aliases,
-      searchText,
-      tokens,
-      tokenSet,
-      ngrams,
-      length: Math.max(tokens.length, 1),
-      sectionBucket: inferSectionBucketForKey(previewKey),
-      highRisk: isManualOnlyPath(previewKey),
-    };
-  });
-
-  const df = new Map();
-  for (const doc of docs) {
-    for (const token of doc.tokenSet) {
-      df.set(token, (df.get(token) || 0) + 1);
-    }
-  }
-
-  const avgLength = docs.length
-    ? docs.reduce((sum, doc) => sum + doc.length, 0) / docs.length
-    : 1;
-
-  return { docs, df, avgLength, totalDocs: docs.length || 1 };
 }
 
 function tokenizeSearchText(value = '') {
@@ -275,37 +200,16 @@ function tokenizeSearchText(value = '') {
 }
 
 function buildCharNgrams(value = '', min = 2, max = 3) {
-  const normalized = normalizeSearchText(value).replace(/\s+/g, '');
-  if (!normalized) return [];
-  const ngrams = [];
+  const compact = normalizeComparable(value);
+  if (!compact) return [];
+  const grams = [];
   for (let size = min; size <= max; size += 1) {
-    if (normalized.length < size) continue;
-    for (let i = 0; i <= normalized.length - size; i += 1) {
-      ngrams.push(normalized.slice(i, i + size));
+    if (compact.length < size) continue;
+    for (let index = 0; index <= compact.length - size; index += 1) {
+      grams.push(compact.slice(index, index + size));
     }
   }
-  return uniqueStrings(ngrams);
-}
-
-function computeBm25Score(queryTokens, doc, indexStats) {
-  if (!queryTokens.length) return 0;
-  const tf = new Map();
-  for (const token of doc.tokens) {
-    tf.set(token, (tf.get(token) || 0) + 1);
-  }
-
-  const k1 = 1.2;
-  const b = 0.75;
-  let score = 0;
-  for (const token of queryTokens) {
-    const termFreq = tf.get(token) || 0;
-    if (!termFreq) continue;
-    const docFreq = indexStats.df.get(token) || 0;
-    const idf = Math.log(1 + ((indexStats.totalDocs - docFreq + 0.5) / (docFreq + 0.5)));
-    const denom = termFreq + k1 * (1 - b + b * (doc.length / indexStats.avgLength));
-    score += idf * ((termFreq * (k1 + 1)) / Math.max(denom, 1e-6));
-  }
-  return score;
+  return uniqueStrings(grams);
 }
 
 function computeSetOverlapScore(left = [], right = []) {
@@ -346,6 +250,7 @@ function inferSectionBucketForField(field = {}) {
   const combined = [
     field.sectionLabel,
     field.contextText,
+    field.containerText,
     ...(field.labelCandidates || []).slice(0, 4),
     field.label,
   ].filter(Boolean).join(' ');
@@ -358,167 +263,25 @@ function inferSectionBucketForField(field = {}) {
 
 function inferAllowedFamiliesForKey(key = '') {
   if (key === '_resumeFile') return new Set(['file']);
-  if (/(birthDate|partyJoinDate|startDate|endDate|issueDate|availableFrom)/.test(key)) {
+  if (/(birthDate|partyJoinDate|startDate|endDate|issueDate|availableFrom|graduationYear)/.test(key)) {
     return new Set(['date', 'text', 'choice']);
   }
-  if (/(description|achievements|selfIntro|campusPractice|campusPositions)/.test(key)) {
+  if (/(description|achievements|selfIntro|campusPractice|campusPositions|skills)/.test(key)) {
     return new Set(['longtext', 'text']);
   }
-  if (/(gender|maritalStatus|politicalStatus|healthStatus|bloodType|freshGraduateStatus|hasOverseasStudy|documentType|householdType|relation|identityType|status|educationLevel|degree|studyMode|ethnicity|nationality|language|proficiency|listeningSpeaking|readingWriting|currentCity|expectedLocations|expectedPositions|jobStatus)/.test(key)) {
+  if (/(gender|maritalStatus|politicalStatus|healthStatus|bloodType|freshGraduateStatus|hasOverseasStudy|documentType|householdType|relation|identityType|status|educationLevel|degree|studyMode|ethnicity|nationality|nativePlace|language|proficiency|listeningSpeaking|readingWriting|currentCity|expectedLocations|expectedPositions|jobStatus)/.test(key)) {
     return new Set(['choice', 'text']);
   }
   return new Set(['text', 'date']);
 }
 
+function isManualOnlyPath(key = '') {
+  return MANUAL_ONLY_PREFIXES.some(prefix => key.startsWith(prefix));
+}
+
 function isHighRiskKey(key = '') {
-  return isManualOnlyPath(key) || /^identity\./.test(key) || /^contact\.emergency/.test(key);
+  return HIGH_RISK_PREFIXES.some(prefix => key.startsWith(prefix));
 }
-
-function computeLexicalSignals(field, doc, indexStats) {
-  const directText = [
-    field.label,
-    field.placeholder,
-    field.name,
-    field.title,
-  ].filter(Boolean).join(' ');
-  const extendedText = [
-    directText,
-    ...(field.labelCandidates || []),
-    field.helperText,
-    field.sectionLabel,
-    field.contextText,
-    field.containerText,
-    Array.isArray(field.options) ? field.options.map(option => `${option.text} ${option.value}`).join(' ') : '',
-  ].filter(Boolean).join(' ');
-
-  const directTokens = tokenizeSearchText(directText);
-  const extendedTokens = tokenizeSearchText(extendedText);
-  const directNgrams = buildCharNgrams(directText);
-  const extendedNgrams = buildCharNgrams(extendedText);
-  const directNormalized = normalizeSearchText(directText).replace(/\s+/g, '');
-  const extendedNormalized = normalizeSearchText(extendedText).replace(/\s+/g, '');
-
-  let exactAliasHit = false;
-  let partialAliasHit = false;
-  for (const alias of doc.aliases) {
-    const normalizedAlias = normalizeSearchText(alias).replace(/\s+/g, '');
-    if (!normalizedAlias) continue;
-    if (normalizedAlias === directNormalized || normalizedAlias === extendedNormalized) {
-      exactAliasHit = true;
-      break;
-    }
-    if (directNormalized.includes(normalizedAlias) || extendedNormalized.includes(normalizedAlias)) {
-      partialAliasHit = true;
-    }
-  }
-
-  return {
-    directTokens,
-    extendedTokens,
-    directNgrams,
-    extendedNgrams,
-    exactAliasHit,
-    partialAliasHit,
-    bm25: computeBm25Score(extendedTokens, doc, indexStats),
-    charOverlap: Math.max(
-      computeSetOverlapScore(directNgrams, doc.ngrams),
-      computeSetOverlapScore(extendedNgrams, doc.ngrams)
-    ),
-    tokenOverlap: Math.max(
-      computeSetOverlapScore(directTokens, doc.tokens),
-      computeSetOverlapScore(extendedTokens, doc.tokens)
-    ),
-  };
-}
-
-function rankRuleCandidates(field, ruleIndex) {
-  const fieldFamily = inferFieldControlFamily(field);
-  const fieldSectionBucket = inferSectionBucketForField(field);
-
-  const coarse = [];
-  for (const doc of ruleIndex.docs) {
-    const allowedFamilies = inferAllowedFamiliesForKey(doc.previewKey);
-    if (!allowedFamilies.has(fieldFamily)) continue;
-
-    if (fieldSectionBucket && doc.sectionBucket && fieldSectionBucket !== doc.sectionBucket) {
-      continue;
-    }
-
-    const lexical = computeLexicalSignals(field, doc, ruleIndex);
-    const score =
-      lexical.bm25 * 2.3 +
-      lexical.charOverlap * 3.4 +
-      lexical.tokenOverlap * 2.2 +
-      (lexical.partialAliasHit ? 0.9 : 0) +
-      (doc.sectionBucket && doc.sectionBucket === fieldSectionBucket ? 0.7 : 0);
-
-    if (score <= 0) continue;
-    coarse.push({
-      ...doc,
-      ...lexical,
-      coarseScore: score,
-    });
-  }
-
-  const top = coarse
-    .sort((left, right) => right.coarseScore - left.coarseScore)
-    .slice(0, TOP_RULE_CANDIDATES)
-    .map(candidate => {
-      const finalScore =
-        candidate.coarseScore +
-        (candidate.exactAliasHit ? 2.4 : 0) +
-        (candidate.partialAliasHit ? 0.6 : 0) +
-        (candidate.highRisk ? -0.9 : 0);
-      return {
-        ...candidate,
-        finalScore,
-      };
-    })
-    .sort((left, right) => right.finalScore - left.finalScore);
-
-  return top;
-}
-
-function buildCandidateHints(candidates = []) {
-  return candidates.slice(0, 3).map(candidate => ({
-    key: candidate.previewKey,
-    score: Number(candidate.finalScore.toFixed(2)),
-    exactAliasHit: candidate.exactAliasHit,
-    sectionBucket: candidate.sectionBucket || '',
-  }));
-}
-
-function selectRankedCandidate(field, rankedCandidates, profile, counters) {
-  if (!rankedCandidates.length) return null;
-
-  const best = rankedCandidates[0];
-  const runnerUp = rankedCandidates[1] || null;
-  const gap = best.finalScore - (runnerUp?.finalScore || 0);
-  const highRisk = isHighRiskKey(best.previewKey);
-  const meetsThreshold = best.finalScore >= (highRisk ? HIGH_RISK_MATCH_THRESHOLD : FALLBACK_MATCH_THRESHOLD);
-  const meetsGap = gap >= FALLBACK_MATCH_MIN_GAP;
-  const exactRiskOverride = highRisk && best.exactAliasHit && best.finalScore >= HIGH_RISK_EXACT_ALIAS_THRESHOLD;
-
-  if ((!meetsThreshold || !meetsGap) && !exactRiskOverride) return null;
-  if (highRisk && !exactRiskOverride) return null;
-
-  let key = best.rule.key;
-  if (best.rule.group) {
-    key = claimGroupedKey(counters, best.rule.group, best.rule.subkey);
-  }
-
-  return {
-    matched: true,
-    key,
-    value: getProfileValue(profile, key),
-    isFile: Boolean(best.rule.isFile),
-    manualOnly: isSensitiveField(field, key),
-    matchMethod: 'ranked',
-    candidateHints: buildCandidateHints(rankedCandidates),
-  };
-}
-
-const RULE_CANDIDATE_INDEX = buildRuleCandidateIndex(FIELD_RULES);
 
 function getProfileValue(profile, keyPath) {
   const parts = keyPath.replace(/\[(\d+)\]/g, '.$1').split('.');
@@ -549,16 +312,175 @@ function buildMatchText(field) {
     field.helperText,
     field.sectionLabel,
     field.contextText,
+    field.containerText,
     optionText,
   ].filter(Boolean).join(' ');
 }
 
-function isManualOnlyPath(key = '') {
-  return MANUAL_ONLY_PREFIXES.some(prefix => key.startsWith(prefix));
+function buildFieldSignals(field = {}) {
+  const primaryLabel = field.label ? [field.label] : [];
+  const supportingLabels = uniqueStrings(
+    (field.labelCandidates || [])
+      .filter(candidate => normalizeComparable(candidate) !== normalizeComparable(field.label || ''))
+      .slice(0, 4)
+  );
+  const secondary = uniqueStrings([
+    field.placeholder,
+    field.name,
+    field.title,
+  ]);
+  const extended = uniqueStrings([
+    field.helperText,
+    field.sectionLabel,
+    field.contextText,
+    field.containerText,
+    ...(field.options || []).map(option => `${option.text || ''} ${option.value || ''}`.trim()),
+  ]);
+  const directLabels = uniqueStrings([...primaryLabel, ...supportingLabels]);
+  const allTexts = uniqueStrings([...directLabels, ...secondary, ...extended]);
+
+  return {
+    primaryLabel,
+    supportingLabels,
+    directLabels,
+    secondary,
+    extended,
+    allTexts,
+    allTokens: tokenizeSearchText(allTexts.join(' ')),
+    allNgrams: buildCharNgrams(allTexts.join(' ')),
+  };
 }
 
-function isSensitiveField(field, key = '') {
-  return isManualOnlyPath(key) || SENSITIVE_KEYWORDS.test(buildMatchText(field));
+function buildRuleCandidateIndex(rules = []) {
+  return rules.map(rule => {
+    const previewKey = rule.key || `${rule.group}[].${rule.subkey}`;
+    const aliases = uniqueStrings([
+      ...(rule.aliases || []),
+      camelToTerms(rule.key || ''),
+      camelToTerms(rule.group || ''),
+      camelToTerms(rule.subkey || ''),
+      previewKey.replace(/\[\]/g, '[]'),
+    ].filter(Boolean));
+
+    return {
+      rule,
+      previewKey,
+      aliases,
+      aliasComparables: aliases.map(alias => ({
+        raw: alias,
+        comparable: normalizeComparable(alias),
+        tokens: tokenizeSearchText(alias),
+        ngrams: buildCharNgrams(alias),
+      })).filter(alias => alias.comparable),
+      sectionBucket: inferSectionBucketForKey(previewKey),
+      highRisk: isHighRiskKey(previewKey),
+    };
+  });
+}
+
+function scoreAliasMatch(texts = [], aliasComparable = '') {
+  if (!aliasComparable) return 0;
+  let best = 0;
+  for (const text of texts) {
+    const comparable = normalizeComparable(text);
+    if (!comparable) continue;
+    if (comparable === aliasComparable) best = Math.max(best, 1);
+    else if (comparable.includes(aliasComparable) || aliasComparable.includes(comparable)) best = Math.max(best, 0.7);
+  }
+  return best;
+}
+
+function computeLexicalSignals(field, doc) {
+  const signals = buildFieldSignals(field);
+
+  let bestExactAlias = '';
+  let bestPartialAlias = '';
+  let primaryScore = 0;
+  let supportingScore = 0;
+  let secondaryScore = 0;
+  let extendedScore = 0;
+  let tokenOverlap = 0;
+  let charOverlap = 0;
+
+  for (const alias of doc.aliasComparables) {
+    const primary = scoreAliasMatch(signals.primaryLabel, alias.comparable);
+    const supporting = Math.max(
+      scoreAliasMatch(signals.supportingLabels.slice(0, 1), alias.comparable) * 0.6,
+      scoreAliasMatch(signals.supportingLabels.slice(1, 2), alias.comparable) * 0.45,
+      scoreAliasMatch(signals.supportingLabels.slice(2), alias.comparable) * 0.25
+    );
+    const secondary = scoreAliasMatch(signals.secondary, alias.comparable);
+    const extended = scoreAliasMatch(signals.extended, alias.comparable);
+
+    if (primary === 1 || secondary === 1) bestExactAlias = bestExactAlias || alias.raw;
+    if ((primary >= 0.7 || supporting >= 0.5 || secondary >= 0.7 || extended >= 0.7) && !bestPartialAlias) bestPartialAlias = alias.raw;
+
+    primaryScore = Math.max(primaryScore, primary);
+    supportingScore = Math.max(supportingScore, supporting);
+    secondaryScore = Math.max(secondaryScore, secondary);
+    extendedScore = Math.max(extendedScore, extended);
+    tokenOverlap = Math.max(tokenOverlap, computeSetOverlapScore(signals.allTokens, alias.tokens));
+    charOverlap = Math.max(charOverlap, computeSetOverlapScore(signals.allNgrams, alias.ngrams));
+  }
+
+  return {
+    signals,
+    primaryScore,
+    supportingScore,
+    secondaryScore,
+    extendedScore,
+    tokenOverlap,
+    charOverlap,
+    exactAliasHit: Boolean(bestExactAlias),
+    partialAliasHit: Boolean(bestPartialAlias),
+    matchedAlias: bestExactAlias || bestPartialAlias || '',
+  };
+}
+
+function rankRuleCandidates(field, ruleIndex) {
+  const fieldFamily = inferFieldControlFamily(field);
+  const fieldSectionBucket = inferSectionBucketForField(field);
+
+  return ruleIndex
+    .map(doc => {
+      const allowedFamilies = inferAllowedFamiliesForKey(doc.previewKey);
+      if (!allowedFamilies.has(fieldFamily)) return null;
+
+      const ruleBuckets = doc.rule.sectionBuckets || (doc.sectionBucket ? [doc.sectionBucket] : []);
+      if (fieldSectionBucket && ruleBuckets.length && !ruleBuckets.includes(fieldSectionBucket)) {
+        return null;
+      }
+
+      const lexical = computeLexicalSignals(field, doc);
+      const finalScore =
+        lexical.primaryScore * 10 +
+        lexical.supportingScore * 3 +
+        lexical.secondaryScore * 3.2 +
+        lexical.extendedScore * 1.4 +
+        lexical.tokenOverlap * 2.4 +
+        lexical.charOverlap * 1.6 +
+        (lexical.exactAliasHit ? 1.2 : 0) +
+        (fieldSectionBucket && ruleBuckets.includes(fieldSectionBucket) ? 0.8 : 0) +
+        (doc.highRisk ? -0.35 : 0);
+
+      return {
+        ...doc,
+        ...lexical,
+        finalScore,
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.finalScore - left.finalScore)
+    .slice(0, TOP_RULE_CANDIDATES);
+}
+
+function buildCandidateHints(candidates = []) {
+  return candidates.slice(0, 3).map(candidate => ({
+    key: candidate.previewKey,
+    score: Number(candidate.finalScore.toFixed(2)),
+    exactAliasHit: candidate.exactAliasHit,
+    sectionBucket: candidate.sectionBucket || '',
+  }));
 }
 
 function parseRepeatPath(key = '') {
@@ -580,66 +502,68 @@ function attachFieldMeta(field, key) {
   };
 }
 
-function claimGroupedKey(counters, group, subkey) {
-  const groupCounters = counters[group] = counters[group] || {};
-  const idx = groupCounters[subkey] || 0;
-  groupCounters[subkey] = idx + 1;
-  return `${group}[${idx}].${subkey}`;
+function claimGroupedKey(counters, group, subkey, field = {}) {
+  const groupState = counters[group] = counters[group] || {
+    nextIndex: 0,
+    repeatKeyToIndex: {},
+  };
+
+  const repeatGroupKey = field.repeatGroupKey || '';
+  let index;
+  if (repeatGroupKey) {
+    if (groupState.repeatKeyToIndex[repeatGroupKey] == null) {
+      groupState.repeatKeyToIndex[repeatGroupKey] = groupState.nextIndex++;
+    }
+    index = groupState.repeatKeyToIndex[repeatGroupKey];
+  } else {
+    index = groupState.nextIndex;
+  }
+
+  return `${group}[${index}].${subkey}`;
 }
 
-function matchFieldByRule(field, profile, counters, adapter = null) {
+function selectRankedCandidate(field, rankedCandidates, profile, counters) {
+  if (!rankedCandidates.length) return null;
+
+  const best = rankedCandidates[0];
+  const runnerUp = rankedCandidates[1] || null;
+  const gap = best.finalScore - (runnerUp?.finalScore || 0);
+  const threshold = best.highRisk ? HIGH_RISK_MATCH_THRESHOLD : MATCH_THRESHOLD;
+
+  if (best.finalScore < threshold) return null;
+  if (gap < MATCH_MIN_GAP && !best.exactAliasHit) return null;
+
+  let key = best.rule.key;
+  if (best.rule.group) {
+    key = claimGroupedKey(counters, best.rule.group, best.rule.subkey, field);
+  }
+
+  return {
+    matched: true,
+    key,
+    value: getProfileValue(profile, key),
+    isFile: Boolean(best.rule.isFile),
+    manualOnly: isManualOnlyPath(key),
+    matchMethod: 'semantic',
+    candidateHints: buildCandidateHints(rankedCandidates),
+  };
+}
+
+const RULE_CANDIDATE_INDEX = buildRuleCandidateIndex(FIELD_RULES);
+
+function matchField(field, profile, counters, adapter = null) {
   const adapterMatch = adapter?.matchField?.({
     field,
     profile,
     counters,
     helpers: {
       buildMatchText,
-      claimGroupedKey: (group, subkey) => claimGroupedKey(counters, group, subkey),
+      claimGroupedKey: (group, subkey) => claimGroupedKey(counters, group, subkey, field),
       getProfileValue,
-      isSensitiveField,
+      isSensitiveField: () => false,
     },
   });
   if (adapterMatch?.matched) return adapterMatch;
-
-  const matchText = buildMatchText(field);
-  const fieldFamily = inferFieldControlFamily(field);
-  const fieldSectionBucket = inferSectionBucketForField(field);
-
-  for (let ruleIndex = 0; ruleIndex < FIELD_RULES.length; ruleIndex += 1) {
-    const rule = FIELD_RULES[ruleIndex];
-    if (!rule.pattern.test(matchText)) continue;
-    const previewKey = rule.key || `${rule.group}[].${rule.subkey}`;
-    const allowedFamilies = inferAllowedFamiliesForKey(previewKey);
-    if (!allowedFamilies.has(fieldFamily)) continue;
-
-    const ruleSectionBucket = RULE_CANDIDATE_INDEX.docs[ruleIndex]?.sectionBucket || '';
-    if (fieldSectionBucket && ruleSectionBucket && fieldSectionBucket !== ruleSectionBucket) continue;
-
-    if (rule.isFile) {
-      return { matched: true, key: '_resumeFile', value: null, isFile: true, manualOnly: false };
-    }
-
-    let key = rule.key;
-    if (rule.group) {
-      key = claimGroupedKey(counters, rule.group, rule.subkey);
-    }
-
-    return {
-      matched: true,
-      key,
-      value: getProfileValue(profile, key),
-      isFile: false,
-      manualOnly: isSensitiveField(field, key),
-      matchMethod: 'rule',
-    };
-  }
-
-  return { matched: false, key: null, value: null, isFile: false, manualOnly: false, matchMethod: 'none' };
-}
-
-function matchField(field, profile, counters, adapter = null) {
-  const directMatch = matchFieldByRule(field, profile, counters, adapter);
-  if (directMatch.matched) return directMatch;
 
   const rankedCandidates = rankRuleCandidates(field, RULE_CANDIDATE_INDEX);
   const rankedMatch = selectRankedCandidate(field, rankedCandidates, profile, counters);
