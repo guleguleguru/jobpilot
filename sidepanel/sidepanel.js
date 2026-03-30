@@ -81,6 +81,8 @@ const PDF_PREVIEW_FIELDS = [
   ['姓名', 'personal.fullName'],
   ['手机', 'contact.phone'],
   ['邮箱', 'contact.email'],
+  ['身高', 'personal.heightCm'],
+  ['体重', 'personal.weightKg'],
   ['现居城市', 'residency.currentCity'],
   ['期望城市', 'jobPreferences.expectedLocations'],
   ['期望岗位', 'jobPreferences.expectedPositions'],
@@ -705,6 +707,16 @@ function bindCardList(listId, label) {
 function formToProfile() {
   const get = name => profileForm.querySelector(`[name="${name}"]`)?.value?.trim?.() || '';
   const profile = createEmptyProfile();
+  const getOptionalNumber = name => {
+    const value = get(name);
+    return value === '' ? null : Number(value);
+  };
+  const getOptionalBoolean = name => {
+    const value = get(name);
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return null;
+  };
 
   setByPath(profile, 'personal.fullName', get('name'));
   setByPath(profile, 'personal.fullNamePinyin', get('personal.fullNamePinyin'));
@@ -713,13 +725,19 @@ function formToProfile() {
   setByPath(profile, 'personal.englishName', get('personal.englishName'));
   setByPath(profile, 'personal.gender', get('gender'));
   setByPath(profile, 'personal.birthDate', get('birthday'));
-  setByPath(profile, 'personal.age', get('personal.age') ? Number(get('personal.age')) : null);
+  setByPath(profile, 'personal.age', getOptionalNumber('personal.age'));
   setByPath(profile, 'personal.nationality', get('personal.nationality'));
   setByPath(profile, 'personal.ethnicity', get('ethnicity'));
+  setByPath(profile, 'personal.heightCm', getOptionalNumber('personal.heightCm'));
+  setByPath(profile, 'personal.weightKg', getOptionalNumber('personal.weightKg'));
+  setByPath(profile, 'personal.maritalStatus', get('personal.maritalStatus'));
+  setByPath(profile, 'personal.healthStatus', get('personal.healthStatus'));
+  setByPath(profile, 'personal.bloodType', get('personal.bloodType'));
   setByPath(profile, 'personal.nativePlace', get('hometown'));
   setByPath(profile, 'personal.politicalStatus', get('politicalStatus'));
   setByPath(profile, 'personal.partyJoinDate', get('personal.partyJoinDate'));
   setByPath(profile, 'personal.freshGraduateStatus', get('personal.freshGraduateStatus'));
+  setByPath(profile, 'personal.hasOverseasStudy', getOptionalBoolean('personal.hasOverseasStudy'));
   setByPath(profile, 'identity.documentType', get('documentType'));
   setByPath(profile, 'identity.documentNumber', get('idNumber'));
   setByPath(profile, 'contact.phone', get('phone'));
@@ -770,10 +788,16 @@ function profileToForm(profile) {
   set('personal.age', normalized.personal.age ?? '');
   set('personal.nationality', normalized.personal.nationality);
   set('ethnicity', normalized.personal.ethnicity);
+  set('personal.heightCm', normalized.personal.heightCm ?? '');
+  set('personal.weightKg', normalized.personal.weightKg ?? '');
+  set('personal.maritalStatus', normalized.personal.maritalStatus);
+  set('personal.healthStatus', normalized.personal.healthStatus);
+  set('personal.bloodType', normalized.personal.bloodType);
   set('hometown', normalized.personal.nativePlace);
   set('politicalStatus', normalized.personal.politicalStatus);
   set('personal.partyJoinDate', normalized.personal.partyJoinDate);
   set('personal.freshGraduateStatus', normalized.personal.freshGraduateStatus);
+  set('personal.hasOverseasStudy', normalized.personal.hasOverseasStudy == null ? '' : String(normalized.personal.hasOverseasStudy));
   set('documentType', normalized.identity.documentType);
   set('idNumber', normalized.identity.documentNumber);
   set('phone', normalized.contact.phone);

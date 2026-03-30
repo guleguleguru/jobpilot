@@ -84,6 +84,44 @@
           <div><label>民族</label><input type="text" name="ethnicity" placeholder="汉族"></div>
         </div>
         <div class="form-row two-col">
+          <div><label>身高（cm）</label><input type="number" name="personal.heightCm" min="0" max="300" step="1" placeholder="175"></div>
+          <div><label>体重（kg）</label><input type="number" name="personal.weightKg" min="0" max="500" step="0.1" placeholder="68"></div>
+        </div>
+        <div class="form-row two-col">
+          <div>
+            <label>婚姻状况</label>
+            <select name="personal.maritalStatus">
+              <option value=""></option>
+              <option value="未婚">未婚</option>
+              <option value="已婚">已婚</option>
+              <option value="离异">离异</option>
+              <option value="丧偶">丧偶</option>
+            </select>
+          </div>
+          <div><label>健康状况</label><input type="text" name="personal.healthStatus" placeholder="良好"></div>
+        </div>
+        <div class="form-row two-col">
+          <div>
+            <label>血型</label>
+            <select name="personal.bloodType">
+              <option value=""></option>
+              <option value="A型">A型</option>
+              <option value="B型">B型</option>
+              <option value="AB型">AB型</option>
+              <option value="O型">O型</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div>
+            <label>海外留学经历</label>
+            <select name="personal.hasOverseasStudy">
+              <option value=""></option>
+              <option value="true">有</option>
+              <option value="false">无</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row two-col">
           <div><label>籍贯</label><input type="text" name="hometown" placeholder="上海"></div>
           <div><label>政治面貌</label><input type="text" name="politicalStatus" placeholder="共青团员"></div>
         </div>
