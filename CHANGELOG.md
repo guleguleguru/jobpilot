@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### 2026-03-30
+
+- Expanded the JobPilot profile options with more personal basics, including `heightCm`, `weightKg`, `maritalStatus`, `healthStatus`, `bloodType`, and `hasOverseasStudy`
+- Wired the new basic fields into sidepanel form load/save flows so profile editing, JSON import/export, and autofill can reuse the same structured values
+
 ### 2026-03-29
 
 - Generalized repeat-section creation so `education`, `languages`, and `familyMembers` reuse shared add-button detection instead of site-specific hardcoding
