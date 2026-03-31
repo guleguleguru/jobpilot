@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### 2026-03-31
+
+- Restored the `china-taiping` adapter field matching path after a regression that short-circuited site-specific matching
+- Tightened the China Taiping photo-upload fallback so explicit fields no longer degrade to `personal.photo` by grid position alone
+- Added local regression tests for the China Taiping adapter to cover direct field mapping, photo manual-only handling, and template fallback safety
+- Added automatic profile snapshots with a retention limit of 7 versions before profile or site-override writes
+- Introduced hostname-based site profile overrides so platform-specific fields can extend the active profile without polluting the global base resume
+- Added sidepanel snapshot browsing and restore actions, with an automatic pre-restore backup of the current profile state
+- Added a sidepanel site-override editor for the current hostname, including JSON patch editing and merged preview output
+
 ### 2026-03-30
 
 - Expanded the JobPilot profile options with more personal basics, including `heightCm`, `weightKg`, `maritalStatus`, `healthStatus`, `bloodType`, and `hasOverseasStudy`

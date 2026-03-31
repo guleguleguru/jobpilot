@@ -2,18 +2,21 @@ import {
   createProfile,
   deleteProfile,
   duplicateProfile,
-  getActiveProfileData,
   getActiveProfileId,
   getHistory,
+  getProfileSnapshots,
   getProfiles,
   getResumeFile,
   getSettings,
+  getSiteProfileOverride,
   migrateEducationToArray,
   migrateToMultiProfile,
+  restoreProfileSnapshot,
   saveActiveProfileData,
   saveHistoryEntry,
   saveResumeFile,
   saveSettings,
+  saveSiteProfileOverride,
   setActiveProfile,
   clearHistory,
 } from '../lib/storage.js';
@@ -21,7 +24,7 @@ import { AIProvider, PROVIDER_PRESETS, checkOllamaRunning } from '../lib/ai-prov
 import { loadPdfJs } from '../lib/pdfjs-loader.js';
 import { summarizeFillReport } from '../lib/fill-report.js';
 import { buildAiParsePrompt, extractPdfContent, extractPdfText, getFieldValue, parseLocalRegex, setFieldValue } from '../lib/pdf-parser.js';
-import { createEmptyProfile, normalizeProfile, setByPath } from '../lib/profile-schema.js';
+import { createEmptyProfile, mergeProfileWithOverride, normalizeProfile, normalizeSiteKey, setByPath } from '../lib/profile-schema.js';
 
 let detectedData = null;
 let allMappings = [];
@@ -43,6 +46,10 @@ const btnFillMain = document.getElementById('btnFillMain');
 const btnExportDebug = ensureDebugExportButton();
 const profileForm = document.getElementById('profileForm');
 const profileSelect = document.getElementById('profileSelect');
+const snapshotList = document.getElementById('snapshotList');
+const siteOverrideHost = document.getElementById('siteOverrideHost');
+const siteOverrideEditor = document.getElementById('siteOverrideEditor');
+const siteOverridePreview = document.getElementById('siteOverridePreview');
 
 const LIST_CONFIG = {
   education: {
@@ -246,6 +253,69 @@ async function sendToContent(action, data = {}, options) {
   return chrome.tabs.sendMessage(tab.id, { action, ...data }, options);
 }
 
+async function getActiveSiteProfile() {
+  const tab = await getActiveTab();
+  const response = await chrome.runtime.sendMessage({
+    action: 'getProfile',
+    hostname: tab?.url || '',
+  });
+  return response?.success ? response.data : null;
+}
+
+async function getCurrentSiteContext() {
+  const tab = await getActiveTab();
+  return {
+    tab,
+    hostname: normalizeSiteKey(tab?.url || ''),
+  };
+}
+
+function buildSiteOverridePreview(baseProfile, overridePatch) {
+  if (!overridePatch) return '暂无站点覆盖';
+  const mergedProfile = mergeProfileWithOverride(baseProfile || {}, overridePatch);
+  const preview = {};
+  for (const key of Object.keys(overridePatch)) {
+    preview[key] = mergedProfile[key];
+  }
+  return JSON.stringify(preview, null, 2);
+}
+
+function renderSiteOverrideDraftPreview() {
+  if (!siteOverrideEditor || !siteOverridePreview) return;
+  const raw = siteOverrideEditor.value.trim();
+  if (!raw) {
+    siteOverridePreview.textContent = '暂无站点覆盖';
+    return;
+  }
+
+  try {
+    const patch = JSON.parse(raw);
+    const baseProfile = normalizeProfile(profilesData[activeProfileId]?.data || {});
+    siteOverridePreview.textContent = buildSiteOverridePreview(baseProfile, patch);
+  } catch {
+    siteOverridePreview.textContent = 'JSON 无法解析，当前预览不可用。';
+  }
+}
+
+async function renderSiteOverridePanel() {
+  if (!siteOverrideHost || !siteOverrideEditor || !siteOverridePreview) return;
+
+  const { hostname } = await getCurrentSiteContext();
+  if (!hostname || !activeProfileId) {
+    siteOverrideHost.textContent = '未识别站点';
+    siteOverrideEditor.value = '';
+    siteOverridePreview.textContent = '请先切到一个真实招聘页面，再编辑站点覆盖资料。';
+    return;
+  }
+
+  const overridePatch = await getSiteProfileOverride(activeProfileId, hostname);
+  const baseProfile = normalizeProfile(profilesData[activeProfileId]?.data || {});
+
+  siteOverrideHost.textContent = hostname;
+  siteOverrideEditor.value = overridePatch ? JSON.stringify(overridePatch, null, 2) : '';
+  siteOverridePreview.textContent = buildSiteOverridePreview(baseProfile, overridePatch);
+}
+
 function setDetectInfo(message, loading = false) {
   detectInfo.innerHTML = loading ? `<span class="spinner-sm"></span> ${message}` : message;
 }
@@ -313,7 +383,7 @@ async function detectForms() {
 
 async function showFillPreview() {
   if (!detectedData) return;
-  const profile = await getActiveProfileData();
+  const profile = await getActiveSiteProfile();
   if (!profile) return;
 
   try {
@@ -370,7 +440,7 @@ async function exportDebugSnapshot() {
     }
 
     setDetectInfo('正在导出当前页面调试信息...', true);
-    const profile = await getActiveProfileData();
+    const profile = await getActiveSiteProfile();
     if (!profile) {
       throw new Error('请先保存个人资料');
     }
@@ -405,7 +475,7 @@ async function runFill() {
   btnFillMain.textContent = '填表中...';
 
   try {
-    const profile = await getActiveProfileData();
+    const profile = await getActiveSiteProfile();
     if (!profile) throw new Error('请先保存个人资料');
     const settings = await getSettings();
     const provider = PROVIDER_PRESETS[settings.provider] || PROVIDER_PRESETS.deepseek;
@@ -839,6 +909,7 @@ async function loadProfiles() {
     .map(([id, profile]) => `<option value="${id}"${id === activeProfileId ? ' selected' : ''}>${escapeHtml(profile.name)}</option>`)
     .join('');
   profileToForm(profilesData[activeProfileId]?.data || createEmptyProfile());
+  await renderSiteOverridePanel();
 }
 
 async function renderHistory() {
@@ -860,6 +931,59 @@ async function renderHistory() {
           <span class="history-stat ok">✓ ${item.successCount || 0}</span>
           ${item.failCount ? `<span class="history-stat err">× ${item.failCount}</span>` : ''}
           ${item.leanMappings?.length ? `<button class="btn-sm btn-replay-history" data-ts="${item.timestamp}" style="margin-left:auto">回填</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function formatSnapshotTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '未知时间';
+  const pad = entry => String(entry).padStart(2, '0');
+  return `${date.getMonth() + 1}/${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function formatSnapshotReason(reason) {
+  return {
+    active_profile_save: '保存资料前',
+    profile_create: '新建资料前',
+    profile_duplicate: '复制资料前',
+    profile_delete: '删除资料前',
+    profile_rename: '重命名前',
+    site_profile_override_save: '站点资料更新前',
+    site_profile_override_delete: '站点资料删除前',
+    snapshot_restore_backup: '恢复前自动备份',
+  }[reason] || reason || '资料变更前';
+}
+
+function countSnapshotSiteOverrides(siteOverrides = {}) {
+  return Object.values(siteOverrides || {}).reduce((total, entries) => total + Object.keys(entries || {}).length, 0);
+}
+
+async function renderSnapshots() {
+  if (!snapshotList) return;
+  const snapshots = await getProfileSnapshots();
+  if (!snapshots.length) {
+    snapshotList.innerHTML = '<p class="history-empty">暂无资料快照</p>';
+    return;
+  }
+
+  snapshotList.innerHTML = snapshots.map(snapshot => {
+    const profileCount = Object.keys(snapshot.profiles || {}).length;
+    const siteOverrideCount = countSnapshotSiteOverrides(snapshot.siteOverrides);
+    const activeProfileName = snapshot.profiles?.[snapshot.activeProfileId]?.name || snapshot.activeProfileId || 'default';
+
+    return `
+      <div class="snapshot-item">
+        <div class="snapshot-item-header">
+          <div class="snapshot-item-title">${escapeHtml(formatSnapshotTime(snapshot.createdAt))}</div>
+          <button class="btn-sm btn-restore-snapshot" data-snapshot-id="${escapeAttr(snapshot.id)}">恢复</button>
+        </div>
+        <div class="snapshot-item-meta">
+          <span>${escapeHtml(formatSnapshotReason(snapshot.reason))}</span>
+          <span>模板 ${escapeHtml(activeProfileName)}</span>
+          <span>${profileCount} 份资料</span>
+          ${siteOverrideCount ? `<span>${siteOverrideCount} 个站点覆盖</span>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -945,7 +1069,11 @@ function bindEvents() {
       document.querySelectorAll('.tab-content').forEach(item => item.classList.remove('active'));
       button.classList.add('active');
       document.getElementById(`tab-${button.dataset.tab}`).classList.add('active');
-      if (button.dataset.tab === 'settings') renderHistory();
+      if (button.dataset.tab === 'profile') renderSiteOverridePanel();
+      if (button.dataset.tab === 'settings') {
+        renderHistory();
+        renderSnapshots();
+      }
     });
   });
 
@@ -961,6 +1089,7 @@ function bindEvents() {
     await setActiveProfile(profileSelect.value);
     activeProfileId = profileSelect.value;
     profileToForm(profilesData[activeProfileId]?.data || createEmptyProfile());
+    await renderSiteOverridePanel();
     if (detectedData) await showFillPreview();
   });
 
@@ -969,6 +1098,8 @@ function bindEvents() {
     if (!name?.trim()) return;
     activeProfileId = await createProfile(name.trim());
     await loadProfiles();
+    await renderSnapshots();
+    await renderSiteOverridePanel();
   });
 
   document.getElementById('btnDuplicateProfile').addEventListener('click', async () => {
@@ -976,12 +1107,16 @@ function bindEvents() {
     await saveActiveProfileData(formToProfile());
     activeProfileId = await duplicateProfile(activeProfileId, `${currentName} 副本`);
     await loadProfiles();
+    await renderSnapshots();
+    await renderSiteOverridePanel();
   });
 
   document.getElementById('btnDeleteProfile').addEventListener('click', async () => {
     if (!confirm('确认删除当前资料模板？')) return;
     await deleteProfile(activeProfileId);
     await loadProfiles();
+    await renderSnapshots();
+    await renderSiteOverridePanel();
   });
 
   bindCardList(LIST_CONFIG.education.listId, LIST_CONFIG.education.label);
@@ -1003,6 +1138,8 @@ function bindEvents() {
     const profile = formToProfile();
     profilesData[activeProfileId].data = profile;
     await saveActiveProfileData(profile);
+    await renderSnapshots();
+    await renderSiteOverridePanel();
     showToast('资料已保存', 'success');
     if (detectedData) await showFillPreview();
   });
@@ -1015,6 +1152,8 @@ function bindEvents() {
     profileToForm(profile);
     profilesData[activeProfileId].data = profile;
     await saveActiveProfileData(profile);
+    await renderSnapshots();
+    await renderSiteOverridePanel();
     event.target.value = '';
   });
 
@@ -1065,6 +1204,8 @@ function bindEvents() {
     });
     profilesData[activeProfileId].data = normalizeProfile(profile);
     await saveActiveProfileData(profilesData[activeProfileId].data);
+    await renderSnapshots();
+    await renderSiteOverridePanel();
     profileToForm(profilesData[activeProfileId].data);
     closePdfModal();
   });
@@ -1123,9 +1264,148 @@ function bindEvents() {
     if (detectedData) await showFillPreview();
   });
 
+  siteOverrideEditor?.addEventListener('input', () => {
+    renderSiteOverrideDraftPreview();
+  });
+
+  document.getElementById('btnReloadSiteOverride').addEventListener('click', async () => {
+    await renderSiteOverridePanel();
+  });
+
+  /*
+  /*
+  /*
+  document.getElementById('btnSaveSiteOverride').addEventListener('click', async () => {
+    const { hostname } = await getCurrentSiteContext();
+    if (!hostname) {
+      showToast('当前页面没有可识别的站点名', 'error');
+      return;
+    }
+
+    try {
+      const raw = siteOverrideEditor.value.trim();
+      const patch = raw ? JSON.parse(raw) : undefined;
+      await saveSiteProfileOverride(activeProfileId, hostname, patch, { merge: false });
+      await renderSnapshots();
+      await renderSiteOverridePanel();
+      if (detectedData) await showFillPreview();
+      showToast(raw ? '站点覆盖已保存' : '站点覆盖已清空', 'success');
+    } catch (error) {
+      showToast(error.message || '站点覆盖 JSON 无效', 'error');
+    }
+  });
+
+  document.getElementById('btnClearSiteOverride').addEventListener('click', async () => {
+    const { hostname } = await getCurrentSiteContext();
+    if (!hostname) {
+      showToast('当前页面没有可识别的站点名', 'error');
+      return;
+    }
+    if (!confirm('清空这个站点的覆盖资料后，将回退到全局主资料。继续吗？')) return;
+
+    try {
+      await saveSiteProfileOverride(activeProfileId, hostname, undefined, { merge: false });
+      await renderSnapshots();
+      await renderSiteOverridePanel();
+      if (detectedData) await showFillPreview();
+      showToast('站点覆盖已清空', 'success');
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  });
+
+  });
+  */
+
+  /*
+  document.getElementById('btnSaveSiteOverride').addEventListener('click', async () => {
+    const { hostname } = await getCurrentSiteContext();
+    if (!hostname) {
+      showToast('当前页面没有可识别的站点名', 'error');
+      return;
+    }
+
+    try {
+      const raw = siteOverrideEditor.value.trim();
+      const patch = raw ? JSON.parse(raw) : undefined;
+      await saveSiteProfileOverride(activeProfileId, hostname, patch, { merge: false });
+      await renderSnapshots();
+      await renderSiteOverridePanel();
+      if (detectedData) await showFillPreview();
+      showToast(raw ? '站点覆盖已保存' : '站点覆盖已清空', 'success');
+    } catch (error) {
+      showToast(error.message || '站点覆盖 JSON 无效', 'error');
+    }
+  });
+
+  document.getElementById('btnClearSiteOverride').addEventListener('click', async () => {
+    const { hostname } = await getCurrentSiteContext();
+    if (!hostname) {
+      showToast('当前页面没有可识别的站点名', 'error');
+      return;
+    }
+    if (!confirm('清空这个站点的覆盖资料后，将回退到全局主资料。继续吗？')) return;
+
+    try {
+      await saveSiteProfileOverride(activeProfileId, hostname, undefined, { merge: false });
+      await renderSnapshots();
+      await renderSiteOverridePanel();
+      if (detectedData) await showFillPreview();
+      showToast('站点覆盖已清空', 'success');
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  });
+
+  });
+  */
+
+  document.getElementById('btnSaveSiteOverride').addEventListener('click', async () => {
+    const { hostname } = await getCurrentSiteContext();
+    if (!hostname) {
+      showToast('No active site detected', 'error');
+      return;
+    }
+
+    try {
+      const raw = siteOverrideEditor.value.trim();
+      const patch = raw ? JSON.parse(raw) : undefined;
+      await saveSiteProfileOverride(activeProfileId, hostname, patch, { merge: false });
+      await renderSnapshots();
+      await renderSiteOverridePanel();
+      if (detectedData) await showFillPreview();
+      showToast(raw ? 'Site override saved' : 'Site override cleared', 'success');
+    } catch (error) {
+      showToast(error.message || 'Invalid site override JSON', 'error');
+    }
+  });
+
+  document.getElementById('btnClearSiteOverride').addEventListener('click', async () => {
+    const { hostname } = await getCurrentSiteContext();
+    if (!hostname) {
+      showToast('No active site detected', 'error');
+      return;
+    }
+    if (!confirm('Clear this site override and fall back to the base profile?')) return;
+
+    try {
+      await saveSiteProfileOverride(activeProfileId, hostname, undefined, { merge: false });
+      await renderSnapshots();
+      await renderSiteOverridePanel();
+      if (detectedData) await showFillPreview();
+      showToast('Site override cleared', 'success');
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  });
+
   document.getElementById('btnClearHistory').addEventListener('click', async () => {
     await clearHistory();
     await renderHistory();
+  });
+
+  document.getElementById('btnRefreshSnapshots').addEventListener('click', async () => {
+    await renderSnapshots();
   });
 
   document.getElementById('historyList').addEventListener('click', async event => {
@@ -1140,6 +1420,23 @@ function bindEvents() {
       payload: { tabId: tab.id, allMappings: entry.leanMappings },
     });
     if (response?.success) showToast('历史回填完成', 'success');
+  });
+
+  snapshotList?.addEventListener('click', async event => {
+    const button = event.target.closest('.btn-restore-snapshot');
+    if (!button) return;
+    if (!confirm('恢复这个快照会覆盖当前资料，但会先自动备份当前状态。继续吗？')) return;
+
+    try {
+      await restoreProfileSnapshot(button.dataset.snapshotId);
+      await loadProfiles();
+      await renderSnapshots();
+      await renderSiteOverridePanel();
+      if (detectedData) await showFillPreview();
+      showToast('已恢复资料快照', 'success');
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
   });
 
   resultsList.addEventListener('click', async event => {
@@ -1161,6 +1458,8 @@ async function init() {
   await migrateEducationToArray();
   bindEvents();
   await loadProfiles();
+  await renderSnapshots();
+  await renderSiteOverridePanel();
 
   const resumeFile = await getResumeFile();
   if (resumeFile) document.getElementById('resumeCurrent').textContent = `已上传：${resumeFile.name}`;

@@ -28,6 +28,7 @@
 | Site / ATS | Region | Form Detection | Basic Fill | AI Fill | Resume Upload | iframe | Status | Notes |
 |---|---|---:|---:|---:|---:|---:|---|---|
 | Local test form | CN | yes | yes | yes | yes | no | working | `test/test-form.html` 本地验证页 |
+| 中国太平招聘官网 / cntp.zhiye.com | CN | yes | yes | untested | untested | unknown | partial | 2026-03-31 使用真实 Edge 登录态复测：表单页可进入，检测到 1 个表单 / 61 个字段，基础匹配 21 项，填写结果 27 filled / 3 skipped / 0 errors，重复区块新增与填写正常；AI 填写与简历上传本轮未测，因此整体仍保留 `partial` |
 | Boss 直聘 | CN | untested | untested | untested | untested | unknown | untested |  |
 | 牛客校招 | CN | untested | untested | untested | untested | unknown | untested |  |
 | 智联招聘 | CN | untested | untested | untested | untested | unknown | untested |  |

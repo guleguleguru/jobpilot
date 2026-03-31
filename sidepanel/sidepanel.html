@@ -59,6 +59,27 @@
       <input type="file" id="pdfFileInput" accept=".pdf" style="display:none">
     </div>
 
+    <div class="site-override-panel">
+      <div class="section-header">
+        <h3 class="section-title">站点覆盖资料</h3>
+        <span class="site-override-badge" id="siteOverrideHost">未识别站点</span>
+      </div>
+      <p class="hint snapshot-hint">只保存当前站点特有字段。建议填写家庭关系编码、语言等级、特殊枚举等平台差异项。</p>
+      <div class="site-override-actions">
+        <button type="button" class="btn-sm" id="btnReloadSiteOverride">重新读取</button>
+        <button type="button" class="btn-sm btn-accent" id="btnSaveSiteOverride">保存站点覆盖</button>
+        <button type="button" class="btn-sm btn-danger" id="btnClearSiteOverride">清空站点覆盖</button>
+      </div>
+      <div class="form-row">
+        <label>站点覆盖 JSON Patch</label>
+        <textarea id="siteOverrideEditor" class="site-override-editor" rows="8" placeholder="{&#10;  &quot;familyMembers&quot;: [{ &quot;identityType&quot;: &quot;配偶&quot; }],&#10;  &quot;languages&quot;: [{ &quot;customFields&quot;: { &quot;certType&quot;: &quot;TEM-8&quot; } }]&#10;}"></textarea>
+      </div>
+      <div class="form-row">
+        <label>合并后预览</label>
+        <pre id="siteOverridePreview" class="site-override-preview">暂无站点覆盖</pre>
+      </div>
+    </div>
+
     <form class="profile-form" id="profileForm">
       <div class="form-section">
         <h3 class="section-title">基础信息</h3>
@@ -299,6 +320,15 @@
         <button type="submit" class="btn-save">保存设置</button>
       </div>
     </form>
+
+    <div class="form-section" style="margin-top:20px">
+      <div class="section-header">
+        <h3 class="section-title">资料快照（最近 7 版）</h3>
+        <button class="btn-sm" type="button" id="btnRefreshSnapshots">刷新</button>
+      </div>
+      <p class="hint snapshot-hint">恢复时会先自动备份当前资料一次，避免恢复错版本后无法回退。</p>
+      <div id="snapshotList"><p class="history-empty">暂无资料快照</p></div>
+    </div>
 
     <div class="form-section" style="margin-top:20px">
       <h3 class="section-title">填表历史（最近 20 条）</h3>

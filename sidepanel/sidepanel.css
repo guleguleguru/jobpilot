@@ -368,8 +368,79 @@ kbd {
   margin-bottom: 14px;
 }
 
+.site-override-panel {
+  margin-bottom: 18px;
+  padding: 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eff6ff 100%);
+}
+
+.site-override-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: white;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.site-override-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.site-override-editor,
+.site-override-preview {
+  width: 100%;
+  min-height: 130px;
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: white;
+  color: var(--gray-800);
+  font: 12px/1.5 Consolas, Monaco, monospace;
+}
+
+.site-override-editor:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.site-override-preview {
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .form-section {
   margin-bottom: 20px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.section-header .section-title {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.snapshot-hint {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin: -4px 0 10px;
 }
 
 .section-title {
@@ -1008,6 +1079,36 @@ kbd {
   border-radius: 6px;
   margin-bottom: 5px;
   font-size: 12px;
+}
+
+.snapshot-item {
+  padding: 10px 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: var(--gray-50);
+}
+
+.snapshot-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.snapshot-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.snapshot-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--gray-400);
 }
 
 .history-item-url {

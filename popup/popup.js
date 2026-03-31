@@ -112,7 +112,10 @@ async function refreshPreview() {
   detectedData = detectResp.data;
   fieldCountEl.textContent = String(detectResp.data.totalFields);
 
-  const profileResp = await chrome.runtime.sendMessage({ action: 'getProfile' });
+  const profileResp = await chrome.runtime.sendMessage({
+    action: 'getProfile',
+    hostname: activeTab?.url || '',
+  });
   if (profileResp?.success && profileResp.data) {
     const matchResp = await sendToTopFrame('matchFields', {
       detectResult: detectedData,
@@ -175,7 +178,10 @@ btnFill.addEventListener('click', async () => {
   fillResult.style.display = 'none';
 
   try {
-    const profileResp = await chrome.runtime.sendMessage({ action: 'getProfile' });
+    const profileResp = await chrome.runtime.sendMessage({
+      action: 'getProfile',
+      hostname: activeTab?.url || '',
+    });
     if (!profileResp?.success || !profileResp.data) {
       showFillResult(false, '请先在侧边栏填写个人资料');
       return;

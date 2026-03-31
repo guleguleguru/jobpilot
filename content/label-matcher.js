@@ -120,6 +120,7 @@ const HIGH_RISK_PREFIXES = [
   'personal.healthStatus',
   'personal.bloodType',
 ];
+const SENSITIVE_KEYWORDS = /(证件照|上传照片|上传文件|婚姻|健康|血型|户口|户籍|紧急联系人|家庭成员)/i;
 const MANUAL_ONLY_PREFIXES = [];
 const TOP_RULE_CANDIDATES = 5;
 const MATCH_THRESHOLD = 4.2;
@@ -277,6 +278,10 @@ function inferAllowedFamiliesForKey(key = '') {
 
 function isManualOnlyPath(key = '') {
   return MANUAL_ONLY_PREFIXES.some(prefix => key.startsWith(prefix));
+}
+
+function isSensitiveField(field, key = '') {
+  return isManualOnlyPath(key) || SENSITIVE_KEYWORDS.test(buildMatchText(field));
 }
 
 function isHighRiskKey(key = '') {
@@ -560,7 +565,7 @@ function matchField(field, profile, counters, adapter = null) {
       buildMatchText,
       claimGroupedKey: (group, subkey) => claimGroupedKey(counters, group, subkey, field),
       getProfileValue,
-      isSensitiveField: () => false,
+      isSensitiveField,
     },
   });
   if (adapterMatch?.matched) return adapterMatch;

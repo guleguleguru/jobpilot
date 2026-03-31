@@ -127,7 +127,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     try {
       switch (message.action) {
         case 'getProfile':
-          sendResponse({ success: true, data: await getProfile() });
+          sendResponse({
+            success: true,
+            data: await getProfile(message.hostname || message.siteKey || sender?.tab?.url || ''),
+          });
           break;
 
         case 'getSettings':

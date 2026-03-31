@@ -664,6 +664,21 @@
     return matched;
   }
 
+  function isPhotoUploadField(field = {}) {
+    const directText = [
+      field.label,
+      field.placeholder,
+      field.helperText,
+      field.name,
+    ].filter(Boolean).join(' ');
+    const topCandidates = (field.labelCandidates || []).slice(0, 2).join(' ');
+    const nearbyText = [topCandidates, field.containerText].filter(Boolean).join(' ');
+
+    if (/(证件照|证件照片|上传照片)/.test(directText)) return true;
+    if (/(点击上传|上传文件)/.test(directText) && /(证件照|证件照片|上传照片)/.test(nearbyText)) return true;
+    return field.type === 'file';
+  }
+
   class ChinaTaipingAdapter extends BaseSiteAdapter {
     constructor() {
       super({ id: 'china-taiping', name: '中国太平' });
@@ -758,8 +773,6 @@
     }
 
     matchField({ field, profile, helpers }) {
-      return null;
-
       const combinedText = [
         field.label,
         ...(field.labelCandidates || []),
@@ -776,6 +789,7 @@
         field.helperText,
         field.name,
       ].filter(Boolean).join(' ');
+      const isPhotoField = isPhotoUploadField(field);
       const hasExplicitLabel = [
         field.label,
         ...(field.labelCandidates || []),
@@ -850,11 +864,11 @@
         }
       }
 
-      if (hasExplicitLabel && !/(证件照|上传文件|上传照片)/.test(directText)) {
+      if (hasExplicitLabel && !isPhotoField) {
         return null;
       }
 
-      if (field.type === 'file' || /(证件照|上传文件|上传照片|证件照片)/.test(directText)) {
+      if (isPhotoField) {
         return buildMatch('personal.photo');
       }
 
@@ -864,6 +878,9 @@
 
       const templateKey = resolveTemplateKey(field, helpers);
       if (templateKey) {
+        if (templateKey === 'personal.photo' && !isPhotoField) {
+          return null;
+        }
         return buildMatch(templateKey);
       }
 

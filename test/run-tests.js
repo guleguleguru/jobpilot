@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 
 import {
   buildAiParsePrompt,
@@ -14,9 +16,144 @@ import {
 } from '../lib/prompt-templates.js';
 import { createFillReport, mergeDiagnosticsIntoReport, mergeFillReports, summarizeFillReport, upsertRepeatSection } from '../lib/fill-report.js';
 import { mapEnumValue } from '../lib/enum-mappings.js';
-import { normalizeProfile } from '../lib/profile-schema.js';
+import {
+  mergeProfileWithOverride,
+  normalizeProfile,
+  normalizeSiteKey,
+  sanitizeProfileOverridePatch,
+} from '../lib/profile-schema.js';
 
 const tests = [];
+
+function deepClone(value) {
+  return value == null ? value : JSON.parse(JSON.stringify(value));
+}
+
+function createChromeStorageMock(initialState = {}) {
+  const store = deepClone(initialState);
+
+  function pick(keys) {
+    if (typeof keys === 'string') {
+      return { [keys]: deepClone(store[keys]) };
+    }
+    if (Array.isArray(keys)) {
+      return Object.fromEntries(keys.map(key => [key, deepClone(store[key])]));
+    }
+    if (keys && typeof keys === 'object') {
+      return Object.fromEntries(
+        Object.entries(keys).map(([key, defaultValue]) => [key, key in store ? deepClone(store[key]) : defaultValue])
+      );
+    }
+    return deepClone(store);
+  }
+
+  globalThis.chrome = {
+    storage: {
+      local: {
+        async get(keys) {
+          return pick(keys);
+        },
+        async set(items) {
+          Object.assign(store, deepClone(items));
+        },
+        async remove(keys) {
+          for (const key of Array.isArray(keys) ? keys : [keys]) {
+            delete store[key];
+          }
+        },
+        async clear() {
+          for (const key of Object.keys(store)) delete store[key];
+        },
+      },
+    },
+  };
+
+  return store;
+}
+
+async function importStorageModuleWithMock(initialState = {}) {
+  const store = createChromeStorageMock(initialState);
+  const moduleUrl = new URL(`../lib/storage.js?test=${Date.now()}_${Math.random()}`, import.meta.url);
+  const mod = await import(moduleUrl.href);
+  return { mod, store };
+}
+
+function loadChinaTaipingAdapter() {
+  const source = readFileSync(new URL('../content/site-adapters/china-taiping.js', import.meta.url), 'utf8');
+  const registered = [];
+
+  class MockBaseSiteAdapter {
+    constructor({ id, name }) {
+      this.id = id;
+      this.name = name || id;
+      this.repeatableLimits = {
+        education: 6,
+        experience: 6,
+        projects: 6,
+        languages: 6,
+        familyMembers: 6,
+      };
+    }
+  }
+
+  const sandbox = {
+    console,
+    document: {
+      body: {},
+      querySelectorAll() {
+        return [];
+      },
+    },
+    window: {
+      __jobpilotRegisterSiteAdapter(adapter) {
+        registered.push(adapter);
+      },
+      __jobpilotSiteAdapterBase: {
+        BaseSiteAdapter: MockBaseSiteAdapter,
+        findElementByText() {
+          return null;
+        },
+        getClickableElements() {
+          return [];
+        },
+        getElementText(element) {
+          return String(element?.textContent || '');
+        },
+        getSectionRoot() {
+          return null;
+        },
+        isVisible() {
+          return true;
+        },
+        normalizeComparableText(value) {
+          return String(value || '')
+            .toLowerCase()
+            .replace(/\s+/g, '')
+            .replace(/[()（）\-_/\\,.;:：，。?"'`~!@#$%^&*+=?|[\]{}<>]/g, '');
+        },
+        normalizeText(value) {
+          return String(value || '').replace(/\s+/g, ' ').trim();
+        },
+        sleep() {
+          return Promise.resolve();
+        },
+        waitForDomChange() {
+          return Promise.resolve(false);
+        },
+      },
+    },
+    Element: class {},
+    Document: class {},
+    HTMLInputElement: class {},
+    HTMLElement: class {},
+    KeyboardEvent: class {},
+    Event: class {},
+  };
+
+  vm.runInNewContext(source, sandbox, { filename: 'china-taiping.js' });
+  assert.equal(registered.length, 1, 'china-taiping adapter should register exactly once');
+  return registered[0];
+}
 
 function test(name, fn) {
   tests.push({ name, fn });
@@ -318,6 +455,290 @@ test('fill report merges diagnostics and repeat sections', () => {
   assert.equal(merged.unmappedValues.length, 1);
   assert.equal(merged.repeatSections[0].created, 1);
   assert.equal(summary.warningCount, 1);
+});
+
+test('china-taiping adapter maps direct labeled fields again after regression fix', () => {
+  const adapter = loadChinaTaipingAdapter();
+  const result = adapter.matchField({
+    field: {
+      id: 'field_education_school',
+      type: 'text',
+      label: '学校名称',
+      labelCandidates: ['学校名称'],
+      placeholder: '请输入',
+      helperText: '',
+      sectionLabel: '教育经历',
+      contextText: '',
+      containerText: '',
+      name: '',
+      selector: '#root > div > div:nth-of-type(2) > div:nth-of-type(1)',
+    },
+    profile: {
+      education: [{ school: '康奈尔大学' }],
+    },
+    helpers: {
+      claimGroupedKey(group, subkey) {
+        return `${group}[0].${subkey}`;
+      },
+      getProfileValue(profile, key) {
+        return key === 'education[0].school' ? profile.education[0].school : '';
+      },
+      isSensitiveField() {
+        return false;
+      },
+    },
+  });
+
+  assert.equal(result?.matched, true);
+  assert.equal(result?.key, 'education[0].school');
+  assert.equal(result?.value, '康奈尔大学');
+});
+
+test('china-taiping adapter keeps photo upload manual-only', () => {
+  const adapter = loadChinaTaipingAdapter();
+  const result = adapter.matchField({
+    field: {
+      id: 'field_photo',
+      type: 'button',
+      label: '点击上传',
+      labelCandidates: ['证件照', '点击上传'],
+      placeholder: '',
+      helperText: '',
+      sectionLabel: '个人信息',
+      contextText: '',
+      containerText: '证件照 上传文件',
+      name: '',
+      selector: '#root > div > div:nth-of-type(3) > div:nth-of-type(2)',
+    },
+    profile: {},
+    helpers: {
+      claimGroupedKey(group, subkey) {
+        return `${group}[0].${subkey}`;
+      },
+      getProfileValue() {
+        return '';
+      },
+      isSensitiveField() {
+        return true;
+      },
+    },
+  });
+
+  assert.equal(result?.matched, true);
+  assert.equal(result?.key, 'personal.photo');
+  assert.equal(result?.manualOnly, true);
+});
+
+test('china-taiping adapter does not fall back explicit fields to photo template', () => {
+  const adapter = loadChinaTaipingAdapter();
+  const result = adapter.matchField({
+    field: {
+      id: 'field_name_like_photo_slot',
+      type: 'text',
+      label: '姓名',
+      labelCandidates: ['姓名'],
+      placeholder: '请输入',
+      helperText: '',
+      sectionLabel: '个人信息',
+      contextText: '',
+      containerText: '',
+      name: '',
+      selector: '#root > div > div:nth-of-type(3) > div:nth-of-type(2)',
+    },
+    profile: {
+      personal: { fullName: '宋培豪' },
+    },
+    helpers: {
+      claimGroupedKey(group, subkey) {
+        return `${group}[0].${subkey}`;
+      },
+      getProfileValue() {
+        return '宋培豪';
+      },
+      isSensitiveField() {
+        return false;
+      },
+    },
+  });
+
+  assert.equal(result, null);
+});
+
+test('china-taiping adapter ignores photo hints leaking from noisy label candidates', () => {
+  const adapter = loadChinaTaipingAdapter();
+  const result = adapter.matchField({
+    field: {
+      id: 'field_name_with_noisy_candidates',
+      type: 'text',
+      label: '姓名',
+      labelCandidates: ['姓名', '证件照上传文件'],
+      placeholder: '请输入',
+      helperText: '',
+      sectionLabel: '个人信息',
+      contextText: '',
+      containerText: '',
+      name: '',
+      selector: '#root > div > div:nth-of-type(1) > div:nth-of-type(1)',
+    },
+    profile: {
+      personal: { fullName: '宋培豪' },
+    },
+    helpers: {
+      claimGroupedKey(group, subkey) {
+        return `${group}[0].${subkey}`;
+      },
+      getProfileValue(profile, key) {
+        return key === 'personal.fullName' ? profile.personal.fullName : '';
+      },
+      isSensitiveField() {
+        return false;
+      },
+    },
+  });
+
+  assert.equal(result, null);
+});
+
+test('site override helpers normalize hostnames and preserve sparse patch data', () => {
+  const patch = sanitizeProfileOverridePatch({
+    personal: { englishName: '  Peter Song  ', fullName: '' },
+    languages: [{ customFields: { examType: ' TEM-8 ' } }, {}],
+    familyMembers: [{ identityType: '配偶', customFields: { relationCode: 'spouse' } }],
+  });
+
+  assert.equal(normalizeSiteKey('https://cntp.zhiye.com/form?job=1'), 'cntp.zhiye.com');
+  assert.equal(patch.personal.englishName, 'Peter Song');
+  assert.equal(patch.personal.fullName, undefined);
+  assert.equal(patch.languages[0].customFields.examType, 'TEM-8');
+  assert.equal(patch.languages.length, 1);
+  assert.equal(patch.familyMembers[0].customFields.relationCode, 'spouse');
+});
+
+test('mergeProfileWithOverride keeps base profile fields while applying site-specific values', () => {
+  const merged = mergeProfileWithOverride(
+    normalizeProfile({
+      personal: { fullName: '宋培豪' },
+      languages: [{ language: '英语', proficiency: 'CET-6' }],
+      familyMembers: [{ relation: '父亲', name: '宋某' }],
+    }),
+    {
+      personal: { englishName: 'Peter Song' },
+      languages: [{ customFields: { certType: 'TEM-8' } }],
+      familyMembers: [{ identityType: '配偶', customFields: { relationCode: 'spouse' } }],
+    }
+  );
+
+  assert.equal(merged.personal.fullName, '宋培豪');
+  assert.equal(merged.personal.englishName, 'Peter Song');
+  assert.equal(merged.languages[0].language, '英语');
+  assert.equal(merged.languages[0].proficiency, 'CET-6');
+  assert.equal(merged.languages[0].customFields.certType, 'TEM-8');
+  assert.equal(merged.familyMembers[0].relation, '父亲');
+  assert.equal(merged.familyMembers[0].identityType, '配偶');
+  assert.equal(merged.familyMembers[0].customFields.relationCode, 'spouse');
+});
+
+test('storage keeps only seven snapshots and merges site-specific profile overrides by hostname', async () => {
+  const { mod } = await importStorageModuleWithMock({
+    profiles: {
+      default: {
+        name: '默认资料',
+        data: normalizeProfile({
+          personal: { fullName: '初始版本' },
+          languages: [{ language: '英语', proficiency: 'CET-6' }],
+          familyMembers: [{ relation: '父亲', name: '宋某' }],
+        }),
+        createdAt: '2026-03-31T00:00:00.000Z',
+      },
+    },
+    activeProfile: 'default',
+  });
+
+  for (let index = 1; index <= 8; index++) {
+    await mod.saveActiveProfileData({
+      personal: { fullName: `版本 ${index}` },
+      languages: [{ language: '英语', proficiency: 'CET-6' }],
+      familyMembers: [{ relation: '父亲', name: '宋某' }],
+    });
+  }
+
+  const snapshots = await mod.getProfileSnapshots();
+  assert.equal(snapshots.length, 7);
+  assert.equal(snapshots[0].reason, 'active_profile_save');
+  assert.equal(snapshots[0].profiles.default.data.personal.fullName, '版本 7');
+  assert.equal(snapshots[6].profiles.default.data.personal.fullName, '版本 1');
+
+  await mod.saveSiteProfileOverride('default', 'https://cntp.zhiye.com/form?job=1', {
+    languages: [{ customFields: { certType: 'TEM-8' } }],
+    familyMembers: [{ identityType: '配偶', customFields: { relationCode: 'spouse' } }],
+  });
+  await mod.saveSiteProfileOverride('default', 'cntp.zhiye.com', {
+    personal: { englishName: 'Peter Song' },
+  });
+
+  const siteProfile = await mod.getProfile('cntp.zhiye.com');
+  const baseProfile = await mod.getProfile();
+  assert.equal(baseProfile.languages[0].customFields?.certType, undefined);
+  assert.equal(baseProfile.personal.englishName, '');
+  assert.equal(siteProfile.personal.englishName, 'Peter Song');
+  assert.equal(siteProfile.languages[0].customFields.certType, 'TEM-8');
+  assert.equal(siteProfile.familyMembers[0].relation, '父亲');
+  assert.equal(siteProfile.familyMembers[0].identityType, '配偶');
+});
+
+test('storage can restore a snapshot and keeps a backup of the pre-restore state', async () => {
+  const { mod } = await importStorageModuleWithMock({
+    profiles: {
+      default: {
+        name: '默认资料',
+        data: normalizeProfile({ personal: { fullName: '初始版本' } }),
+        createdAt: '2026-03-31T00:00:00.000Z',
+      },
+    },
+    activeProfile: 'default',
+  });
+
+  await mod.saveActiveProfileData({ personal: { fullName: '版本 A' } });
+  await mod.saveActiveProfileData({ personal: { fullName: '版本 B' } });
+
+  const snapshotsBeforeRestore = await mod.getProfileSnapshots();
+  const targetSnapshot = snapshotsBeforeRestore.find(snapshot => snapshot.profiles.default.data.personal.fullName === '版本 A');
+  assert.ok(targetSnapshot, 'expected to find snapshot for 版本 A');
+
+  await mod.restoreProfileSnapshot(targetSnapshot.id);
+
+  const restoredProfile = await mod.getProfile();
+  const snapshotsAfterRestore = await mod.getProfileSnapshots();
+  assert.equal(restoredProfile.personal.fullName, '版本 A');
+  assert.equal(snapshotsAfterRestore[0].reason, 'snapshot_restore_backup');
+  assert.equal(snapshotsAfterRestore[0].profiles.default.data.personal.fullName, '版本 B');
+});
+
+test('storage supports replacing a site override patch from editor-style saves', async () => {
+  const { mod } = await importStorageModuleWithMock({
+    profiles: {
+      default: {
+        name: '默认资料',
+        data: normalizeProfile({
+          personal: { fullName: '宋培豪' },
+          languages: [{ language: '英语', proficiency: 'CET-6' }],
+        }),
+        createdAt: '2026-03-31T00:00:00.000Z',
+      },
+    },
+    activeProfile: 'default',
+  });
+
+  await mod.saveSiteProfileOverride('default', 'cntp.zhiye.com', {
+    languages: [{ customFields: { certType: 'TEM-8' } }],
+  });
+  await mod.saveSiteProfileOverride('default', 'cntp.zhiye.com', {
+    personal: { englishName: 'Peter Song' },
+  }, { merge: false });
+
+  const siteProfile = await mod.getProfile('cntp.zhiye.com');
+  assert.equal(siteProfile.personal.englishName, 'Peter Song');
+  assert.equal(siteProfile.languages[0].customFields?.certType, undefined);
 });
 
 let passed = 0;
