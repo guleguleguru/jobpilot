@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="sidepanel.css">
 </head>
 <body>
+  <div class="sp-topbar">
   <header class="sp-header">
     <span class="sp-logo">JP</span>
     <h1>JobPilot <span>ATS Autofill</span></h1>
@@ -17,6 +18,7 @@
     <button class="tab-btn" data-tab="profile">资料</button>
     <button class="tab-btn" data-tab="settings">设置</button>
   </nav>
+  </div>
 
   <section class="tab-content active" id="tab-fill">
     <div class="fill-header">
@@ -26,6 +28,25 @@
 
     <div class="fill-preview" id="fillPreview" style="display:none"></div>
     <div class="fill-diagnostics" id="fillDiagnostics" style="display:none"></div>
+
+    <div class="target-draft-panel">
+      <div class="section-header">
+        <h3 class="section-title">岗位版资料</h3>
+      </div>
+      <div class="form-row two-col">
+        <div><label>公司</label><input type="text" id="targetCompany" placeholder="百度"></div>
+        <div><label>岗位</label><input type="text" id="targetRole" placeholder="算法工程师"></div>
+      </div>
+      <div class="form-row">
+        <label>补充要求</label>
+        <textarea id="targetNotes" rows="3" placeholder="例如：突出推荐系统、大模型、后端高并发经验"></textarea>
+      </div>
+      <div class="site-override-actions">
+        <button type="button" class="btn-sm btn-accent" id="btnGenerateTargetDraft">AI 生成岗位版</button>
+        <button type="button" class="btn-sm btn-danger" id="btnClearTargetDraft">清空岗位版</button>
+      </div>
+      <p class="hint" id="targetDraftStatus">未设置目标岗位，当前使用通用资料。</p>
+    </div>
 
     <button class="btn-fill-main" id="btnFillMain" disabled>一键填表</button>
 
@@ -59,7 +80,7 @@
       <input type="file" id="pdfFileInput" accept=".pdf" style="display:none">
     </div>
 
-    <div class="site-override-panel">
+    <div class="site-override-panel" hidden>
       <div class="section-header">
         <h3 class="section-title">站点覆盖资料</h3>
         <span class="site-override-badge" id="siteOverrideHost">未识别站点</span>
@@ -163,13 +184,16 @@
         <div class="form-row"><label>通讯地址</label><input type="text" name="address" placeholder="上海市浦东新区..."></div>
         <div class="form-row two-col">
           <div><label>微信号</label><input type="text" name="wechat" placeholder="wechat_id"></div>
-          <div><label>固定电话</label><input type="text" name="contact.landline" placeholder="021-xxxxxxx"></div>
+          <div><label>QQ号</label><input type="text" name="qq" placeholder="123456789"></div>
         </div>
         <div class="form-row two-col">
+          <div><label>固定电话</label><input type="text" name="contact.landline" placeholder="021-xxxxxxx"></div>
           <div><label>邮编</label><input type="text" name="contact.postalCode" placeholder="200120"></div>
-          <div><label>紧急联系人</label><input type="text" name="contact.emergencyContactName" placeholder="父亲"></div>
         </div>
-        <div class="form-row"><label>紧急联系人电话</label><input type="text" name="contact.emergencyContactPhone" placeholder="138XXXXXXXX"></div>
+        <div class="form-row two-col">
+          <div><label>紧急联系人</label><input type="text" name="contact.emergencyContactName" placeholder="父亲"></div>
+          <div><label>紧急联系人电话</label><input type="text" name="contact.emergencyContactPhone" placeholder="138XXXXXXXX"></div>
+        </div>
       </div>
 
       <div class="form-section">
@@ -190,8 +214,9 @@
         <h3 class="section-title">求职偏好</h3>
         <div class="form-row two-col">
           <div><label>期望城市</label><input type="text" name="jobPreferences.expectedCity" placeholder="上海, 深圳"></div>
-          <div><label>期望岗位</label><input type="text" name="jobPreferences.expectedPositions" placeholder="后端工程师, 数据工程师"></div>
+          <div><label>面试城市</label><input type="text" name="jobPreferences.interviewLocations" placeholder="上海, 深圳"></div>
         </div>
+        <div class="form-row"><label>期望岗位</label><input type="text" name="jobPreferences.expectedPositions" placeholder="后端工程师, 数据工程师"></div>
         <div class="form-row two-col">
           <div><label>到岗时间</label><input type="text" name="jobPreferences.availableFrom" placeholder="两周内"></div>
           <div><label>求职状态</label><input type="text" name="jobPreferences.jobStatus" placeholder="积极求职"></div>
@@ -226,8 +251,23 @@
         <div id="awardList"></div>
         <button type="button" class="btn-add-entry" id="btnAddAward">＋ 添加奖项</button>
         <div style="height:12px"></div>
+        <div id="competitionList"></div>
+        <button type="button" class="btn-add-entry" id="btnAddCompetition">＋ 添加竞赛 / 大赛</button>
+        <div style="height:12px"></div>
         <div id="languageList"></div>
-        <button type="button" class="btn-add-entry" id="btnAddLanguage">＋ 添加语言能力</button>
+        <button type="button" class="btn-add-entry" id="btnAddLanguage">+ Add Language Ability</button>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">Language Exams</h3>
+        <div id="languageExamList"></div>
+        <button type="button" class="btn-add-entry" id="btnAddLanguageExam">+ Add Language Exam</button>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">Developer Languages</h3>
+        <div id="developerLanguageList"></div>
+        <button type="button" class="btn-add-entry" id="btnAddDeveloperLanguage">+ Add Developer Language</button>
       </div>
 
       <div class="form-section">
@@ -313,6 +353,21 @@
           <label>置信度阈值 <span id="thresholdValue">0.7</span></label>
           <input type="range" name="confidenceThreshold" min="0.3" max="1" step="0.05" id="confidenceThreshold">
           <p class="hint">低于阈值的 AI 字段会高亮提示人工确认。</p>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">语义记忆</h3>
+        <div class="form-row">
+          <p class="hint" id="semanticMemoryStatus">已学习 0 条字段样本</p>
+        </div>
+        <div class="form-row test-conn-row">
+          <button type="button" class="btn-sm" id="btnImportSemanticDebug">从 Debug JSON 批量训练</button>
+          <button type="button" class="btn-sm btn-danger" id="btnClearSemanticMemory">清空语义记忆</button>
+        </div>
+        <div class="form-row">
+          <p class="hint">导入多个 <code>jobpilot-debug-*.json</code> 后，会把已命中的字段和可确定 key 的缺值字段沉淀为可复用样本。</p>
+          <input type="file" id="semanticDebugInput" accept=".json,application/json" multiple style="display:none">
         </div>
       </div>
 

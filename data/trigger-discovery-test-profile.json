@@ -1,0 +1,15 @@
+{
+  "personal": {
+    "fullName": "Trigger Discovery Candidate"
+  },
+  "awards": [
+    {
+      "name": "全国大学生创新创业大赛一等奖",
+      "year": "2024",
+      "description": "验证隐藏 section 的 trigger 发现和新增动作是否可靠。"
+    }
+  ],
+  "meta": {
+    "schemaVersion": 2
+  }
+}

@@ -10,17 +10,22 @@ import {
   getSettings,
   saveHistoryEntry,
   saveLastFillReport,
+  saveTargetProfileDraft,
 } from '../lib/storage.js';
 import { AIProvider } from '../lib/ai-provider.js';
 import { PROVIDER_PRESETS } from '../lib/ai-provider.js';
 import { mergeFillReports } from '../lib/fill-report.js';
-import { buildFieldMappingPrompt, validateFieldMappings } from '../lib/prompt-templates.js';
+import { buildFieldMappingPrompt, buildTargetProfilePrompt, validateFieldMappings } from '../lib/prompt-templates.js';
+import { sanitizeProfileOverridePatch } from '../lib/profile-schema.js';
+import { normalizeTargetProfileContext } from '../lib/target-profile.js';
 
 const CONTENT_SCRIPT_FILES = [
   'content/form-detector.js',
   'content/site-adapters/base-adapter.js',
   'content/site-adapters/index.js',
   'content/site-adapters/china-taiping.js',
+  'content/site-adapters/antgroup.js',
+  'content/site-adapters/generic.js',
   'content/label-matcher.js',
   'content/file-uploader.js',
   'content/form-filler.js',
@@ -129,7 +134,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'getProfile':
           sendResponse({
             success: true,
-            data: await getProfile(message.hostname || message.siteKey || sender?.tab?.url || ''),
+            data: await getProfile(
+              message.hostname || message.siteKey || sender?.tab?.url || '',
+              message.targetKey || ''
+            ),
           });
           break;
 
@@ -147,6 +155,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case 'aiFieldMapping':
           sendResponse(await handleAIFieldMapping(message.payload));
+          break;
+
+        case 'generateTargetProfileDraft':
+          sendResponse(await handleGenerateTargetProfileDraft(message.payload));
           break;
 
         case 'saveHistory':
@@ -232,6 +244,67 @@ async function handleAIFieldMapping(payload) {
     success: true,
     data: {
       fieldMappings,
+      usage,
+      model: `${settings.provider}/${settings.model}`,
+    },
+  };
+}
+
+async function handleGenerateTargetProfileDraft(payload = {}) {
+  const settings = await getSettings();
+  const preset = PROVIDER_PRESETS[settings.provider] || PROVIDER_PRESETS.deepseek;
+
+  if (!settings.aiEnabled) {
+    return { success: false, error: 'AI is disabled in settings' };
+  }
+  if (!preset.noApiKey && !settings.apiKey) {
+    return { success: false, error: 'API key is required before generating a target draft' };
+  }
+
+  const profileId = String(payload.profileId || '').trim();
+  if (!profileId) {
+    return { success: false, error: 'Profile id is required' };
+  }
+
+  const context = normalizeTargetProfileContext(payload.jobContext || {});
+  if (!context.targetKey) {
+    return { success: false, error: 'Target company or role is required' };
+  }
+
+  const provider = new AIProvider({
+    provider: settings.provider,
+    apiKey: settings.apiKey,
+    model: settings.model,
+    temperature: settings.temperature ?? 0.1,
+  });
+
+  const messages = buildTargetProfilePrompt(context, payload.profile || {});
+
+  let json;
+  let usage;
+  try {
+    ({ json, usage } = await provider.completeJSON(messages, { timeout: 60000 }));
+  } catch (error) {
+    console.error('[JobPilot SW] target draft generation failed:', error.message);
+    return { success: false, error: error.message || 'Failed to generate target draft' };
+  }
+
+  const rawPatch =
+    json && typeof json === 'object' && !Array.isArray(json) && json.patch && typeof json.patch === 'object' && !Array.isArray(json.patch)
+      ? json.patch
+      : json;
+  const patch = sanitizeProfileOverridePatch(
+    rawPatch && typeof rawPatch === 'object' && !Array.isArray(rawPatch) ? rawPatch : {}
+  );
+
+  await saveTargetProfileDraft(profileId, context.targetKey, patch, { merge: false });
+
+  return {
+    success: true,
+    data: {
+      targetKey: context.targetKey,
+      context,
+      patch: patch || {},
       usage,
       model: `${settings.provider}/${settings.model}`,
     },

@@ -17,12 +17,64 @@ function triggerEvents(el) {
   el.dispatchEvent(new Event('blur', { bubbles: true }));
 }
 
+function dispatchKeyboardEvent(el, key) {
+  if (!el?.dispatchEvent) return;
+  el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  el.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+}
+
+function clickLikeUser(el) {
+  if (!el) return;
+  try {
+    el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+  } catch (_) {}
+  el.click?.();
+}
+
 function setInputValue(el, value) {
   el.focus();
   const setter = el.tagName === 'TEXTAREA' ? nativeTextareaSetter : nativeInputValueSetter;
   if (setter) setter.call(el, value);
   else el.value = value;
   triggerEvents(el);
+}
+
+function setContentEditableValue(el, value) {
+  el.focus?.();
+  el.textContent = value;
+  triggerEvents(el);
+}
+
+function setTextLikeValue(el, value) {
+  if (!el) return false;
+
+  if (el.isContentEditable || el.getAttribute?.('contenteditable') === 'true') {
+    setContentEditableValue(el, value);
+    return true;
+  }
+
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+    const previousReadOnly = el.readOnly;
+    const previousDisabled = el.disabled;
+    try {
+      if (previousReadOnly) el.readOnly = false;
+      if (previousDisabled) el.disabled = false;
+      setInputValue(el, value);
+      return true;
+    } finally {
+      if (previousReadOnly) el.readOnly = true;
+      if (previousDisabled) el.disabled = true;
+    }
+  }
+
+  if ('value' in el) {
+    el.value = value;
+    triggerEvents(el);
+    return true;
+  }
+
+  setContentEditableValue(el, value);
+  return true;
 }
 
 function setNativeSelectValue(el, value) {
@@ -54,17 +106,34 @@ function setNativeSelectValue(el, value) {
 }
 
 function setNativeRadioValue(el, value, doc) {
-  const radios = doc.querySelectorAll(`input[type="radio"][name="${el.name}"]`);
-  const valueLower = String(value).toLowerCase();
+  const valueLower = String(value || '').trim().toLowerCase();
+  const labelText = (el.labels?.[0]?.textContent || '').trim().toLowerCase();
+  const currentValue = String(el.value || '').trim().toLowerCase();
+  if (
+    currentValue === valueLower ||
+    currentValue.includes(valueLower) ||
+    valueLower.includes(currentValue) ||
+    labelText.includes(valueLower) ||
+    valueLower.includes(labelText)
+  ) {
+    el.click();
+    triggerEvents(el);
+    return true;
+  }
+
+  const radios = el.name
+    ? doc.querySelectorAll(`input[type="radio"][name="${el.name}"]`)
+    : el.closest('fieldset, [role="radiogroup"], label, li, div')?.querySelectorAll('input[type="radio"]')
+      || doc.querySelectorAll('input[type="radio"]');
   for (const radio of radios) {
     const radioLabel = radio.value.toLowerCase();
-    const labelText = (radio.labels?.[0]?.textContent || '').trim().toLowerCase();
+    const radioText = (radio.labels?.[0]?.textContent || '').trim().toLowerCase();
     if (
       radio.value === value ||
       radioLabel.includes(valueLower) ||
       valueLower.includes(radioLabel) ||
-      labelText.includes(valueLower) ||
-      valueLower.includes(labelText)
+      radioText.includes(valueLower) ||
+      valueLower.includes(radioText)
     ) {
       radio.click();
       triggerEvents(radio);
@@ -89,6 +158,16 @@ function normalizeLocatorText(value = '') {
     .replace(/\s+/g, ' ')
     .replace(/[()（）\-_/\\,.;:：，。'"`~!@#$%^&*+=?|[\]{}<>]/g, ' ')
     .trim();
+}
+
+function escapeRegExp(value = '') {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isVisibleElement(el) {
+  if (!(el instanceof Element)) return false;
+  const style = window.getComputedStyle(el);
+  return style.display !== 'none' && style.visibility !== 'hidden';
 }
 
 function buildLocatorNgrams(value = '') {
@@ -130,6 +209,201 @@ function getControlFamily(type = 'text') {
   }
 }
 
+const GENERIC_DROPDOWN_ROOT_SELECTOR = '.el-select-dropdown, .ant-select-dropdown, .ivu-select-dropdown, .layui-form-select, [role="listbox"], .dropdown-menu, .select-dropdown, .select-options, .ant-picker-dropdown, .el-picker-panel';
+const GENERIC_DROPDOWN_OPTION_SELECTOR = '.el-select-dropdown__item, .ant-select-item-option, .ant-select-item-option-content, .ant-select-dropdown-menu-item, .ivu-select-item, .layui-this, [role="option"], .dropdown-item, .option, .select-option, li, td, button';
+
+function collectSearchRoots(element, maxDepth = 4) {
+  const roots = [];
+  let current = element;
+  let depth = 0;
+  while (current?.parentElement && depth < maxDepth) {
+    current = current.parentElement;
+    roots.push(current);
+    depth += 1;
+  }
+  return roots;
+}
+
+function getVisibleDropdownRoots(doc = document) {
+  return Array.from(doc.querySelectorAll(GENERIC_DROPDOWN_ROOT_SELECTOR)).filter(isVisibleElement);
+}
+
+function resolvePopupRoot(trigger) {
+  const popupId = trigger?.getAttribute?.('aria-controls') || trigger?.getAttribute?.('aria-owns') || '';
+  if (!popupId) return null;
+  return trigger.ownerDocument?.getElementById(popupId) || null;
+}
+
+function matchesChoiceText(text = '', value = '') {
+  const left = normalizeLocatorText(text).replace(/\s+/g, '');
+  const right = normalizeLocatorText(value).replace(/\s+/g, '');
+  if (!left || !right) return false;
+  return left === right || left.includes(right) || right.includes(left);
+}
+
+function matchesFilledText(text = '', value = '') {
+  return matchesChoiceText(text, value);
+}
+
+function getFieldTimingHint(fieldEntry = {}) {
+  const field = fieldEntry.field || fieldEntry;
+  const combined = normalizeLocatorText([
+    fieldEntry.key,
+    field.label,
+    ...(field.labelCandidates || []),
+    field.placeholder,
+    field.name,
+    field.title,
+    field.helperText,
+  ].filter(Boolean).join(' '));
+
+  if (/(startdate|starttime|start|from|begin|开始|起始|入学|入职)/.test(combined)) return 'start';
+  if (/(enddate|endtime|end|until|finish|to|graduat|结束|截止|毕业|离职)/.test(combined)) return 'end';
+  return '';
+}
+
+function looksLikeChoiceControl(el, field = {}) {
+  if (!el) return false;
+  if (field.type === 'select') return true;
+  const identity = normalizeLocatorText([
+    el.tagName || '',
+    el.getAttribute?.('role') || '',
+    el.getAttribute?.('aria-haspopup') || '',
+    el.getAttribute?.('class') || '',
+    el.getAttribute?.('data-testid') || '',
+    el.getAttribute?.('placeholder') || '',
+  ].join(' '));
+
+  return field.type === 'search'
+    || el.getAttribute?.('role') === 'combobox'
+    || el.getAttribute?.('aria-haspopup') === 'listbox'
+    || /(select|dropdown|picker|autocomplete|suggest|choose|search)/.test(identity);
+}
+
+function findChoiceOption(roots, value) {
+  const exactPattern = new RegExp(`^${escapeRegExp(String(value || '').trim())}$`, 'i');
+  const fuzzyPattern = new RegExp(escapeRegExp(String(value || '').trim()), 'i');
+
+  for (const root of roots.filter(Boolean)) {
+    const options = Array.from(root.querySelectorAll(GENERIC_DROPDOWN_OPTION_SELECTOR))
+      .filter(option => isVisibleElement(option) && normalizeLocatorText(option.textContent || ''));
+    const exact = options.find(option => exactPattern.test(String(option.textContent || '').trim()));
+    if (exact) return exact;
+    const fuzzy = options.find(option => fuzzyPattern.test(String(option.textContent || '').trim()) || matchesChoiceText(option.textContent || '', value));
+    if (fuzzy) return fuzzy;
+  }
+  return null;
+}
+
+async function setGenericChoiceValue(element, value) {
+  const text = String(value || '').trim();
+  if (!text) return false;
+
+  const doc = element?.ownerDocument || document;
+  const trigger = element.closest?.('[role="combobox"], .ant-select, .el-select, .ivu-select, .select, .dropdown, .picker, .autocomplete')
+    || element;
+
+  clickLikeUser(trigger);
+  clickLikeUser(element);
+  trigger.focus?.();
+  element.focus?.();
+
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element.isContentEditable) {
+    setTextLikeValue(element, text);
+    dispatchKeyboardEvent(element, 'ArrowDown');
+  }
+
+  await new Promise(resolve => setTimeout(resolve, 120));
+
+  const option = findChoiceOption(
+    [
+      resolvePopupRoot(trigger),
+      ...getVisibleDropdownRoots(doc),
+      ...collectSearchRoots(trigger, 4),
+    ],
+    text
+  );
+
+  if (option) {
+    clickLikeUser(option);
+    triggerEvents(element);
+    return true;
+  }
+
+  const nearbyOption = Array.from(trigger.closest?.('[role="dialog"], form, section, .modal, .drawer, .panel, body')?.querySelectorAll?.('button, a, [role="option"], [role="button"], li, div, span') || [])
+    .find(candidate => isVisibleElement(candidate) && matchesChoiceText(candidate.textContent || '', text));
+  if (nearbyOption) {
+    clickLikeUser(nearbyOption);
+    triggerEvents(element);
+    return true;
+  }
+
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+    dispatchKeyboardEvent(element, 'Enter');
+    return matchesFilledText(element.value || trigger.textContent || '', text);
+  }
+
+  if (element.isContentEditable) {
+    dispatchKeyboardEvent(element, 'Enter');
+    return matchesFilledText(element.textContent || trigger.textContent || '', text);
+  }
+
+  return matchesFilledText(trigger.textContent || '', text);
+}
+
+function formatDateForElement(element, value) {
+  const normalized = formatDate(value);
+  const type = String(element?.getAttribute?.('type') || element?.type || '').toLowerCase();
+  if (type === 'month') return normalized.slice(0, 7);
+  if (type === 'date' && /^\d{4}-\d{2}$/.test(String(value || ''))) return `${value}-01`;
+  return normalized;
+}
+
+function collectDateGroupInputs(element) {
+  const root = element?.closest?.('.ant-picker, .el-date-editor, .arco-picker, .semi-datepicker, .semi-datePicker, .date-range, .date-picker, .datepicker, .throne-biz-date-range-picker-wrapper, .ud__picker-rangeInput, .ud__picker-picker, .ud__picker-inputWrapper, [class*="picker"], [class*="date"], [role="group"], [role="combobox"]')
+    || element?.parentElement
+    || null;
+  if (!root?.querySelectorAll) return [];
+  return Array.from(root.querySelectorAll('input, textarea, [role="combobox"], [role="textbox"], [contenteditable="true"]'))
+    .filter(isVisibleElement);
+}
+
+function resolveDateTargetElement(element, fieldEntry = {}) {
+  const inputs = collectDateGroupInputs(element);
+  if (!inputs.length) return element;
+
+  const hint = getFieldTimingHint(fieldEntry);
+  if (hint === 'start') return inputs[0];
+  if (hint === 'end') return inputs[inputs.length - 1];
+  return element;
+}
+
+async function setGenericDateValue(element, value, fieldEntry = {}) {
+  const formatted = formatDateForElement(element, value);
+  const target = resolveDateTargetElement(element, fieldEntry);
+  const trigger = target.closest?.('.ant-picker, .el-date-editor, .arco-picker, .semi-datepicker, .semi-datePicker, .date-range, .date-picker, .datepicker, .throne-biz-date-range-picker-wrapper, .ud__picker-rangeInput, .ud__picker-picker, .ud__picker-inputWrapper, [class*="picker"]')
+    || target;
+
+  clickLikeUser(trigger);
+  clickLikeUser(target);
+  target.focus?.();
+
+  const wrote = setTextLikeValue(target, formatted);
+  dispatchKeyboardEvent(target, 'Enter');
+  triggerEvents(target);
+
+  const confirmButton = findChoiceOption(getVisibleDropdownRoots(target.ownerDocument || document), '确定')
+    || findChoiceOption(getVisibleDropdownRoots(target.ownerDocument || document), 'OK')
+    || findChoiceOption(getVisibleDropdownRoots(target.ownerDocument || document), 'Apply');
+  clickLikeUser(confirmButton);
+
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+    return wrote && matchesFilledText(target.value || '', formatted);
+  }
+
+  return wrote;
+}
+
 function collectElementLocatorText(el) {
   const parts = [
     el.getAttribute?.('aria-label') || '',
@@ -158,21 +432,26 @@ function getLocatorCandidates(doc, field) {
   if (family === 'textarea') return Array.from(doc.querySelectorAll('textarea'));
   if (family === 'check') return Array.from(doc.querySelectorAll('input[type="radio"], input[type="checkbox"]'));
   if (family === 'choice') {
-    return Array.from(doc.querySelectorAll('select, input, [role="combobox"]'))
-      .filter(el => el.tagName === 'SELECT' || el.getAttribute?.('role') === 'combobox' || el.closest?.('li'));
+    return Array.from(doc.querySelectorAll('select, input, [role="combobox"], [contenteditable="true"]'))
+      .filter(el => el.tagName === 'SELECT' || looksLikeChoiceControl(el, field) || el.closest?.('li'));
   }
-  return Array.from(doc.querySelectorAll('input, textarea, select')).filter(el => {
+  return Array.from(doc.querySelectorAll('input, textarea, select, [role="combobox"], [role="textbox"], [contenteditable="true"]')).filter(el => {
     if (family === 'date') {
-      return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA';
+      return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.getAttribute?.('role') === 'combobox';
     }
     if (el.tagName === 'SELECT') return false;
+    if (el.getAttribute?.('role') === 'combobox' || el.getAttribute?.('role') === 'textbox' || el.getAttribute?.('contenteditable') === 'true') {
+      return true;
+    }
     const type = (el.getAttribute?.('type') || '').toLowerCase();
     return !['radio', 'checkbox', 'file', 'hidden'].includes(type);
   });
 }
 
-function scoreElementForField(el, field) {
+function scoreElementForField(el, fieldEntry) {
+  const field = fieldEntry.field || fieldEntry;
   const targetText = normalizeLocatorText([
+    fieldEntry.key,
     field.label,
     ...(field.labelCandidates || []),
     field.placeholder,
@@ -214,14 +493,32 @@ function scoreElementForField(el, field) {
   if (field.type === 'date') {
     const placeholder = normalizeLocatorText(el.getAttribute?.('placeholder') || '');
     if (/(日期|时间|date|time|选择)/.test(placeholder)) score += 1.5;
+
+    const timingHint = getFieldTimingHint(fieldEntry);
+    const elementText = normalizeLocatorText([
+      el.getAttribute?.('placeholder') || '',
+      el.getAttribute?.('name') || '',
+      el.id || '',
+      el.getAttribute?.('aria-label') || '',
+      el.parentElement?.textContent || '',
+    ].join(' '));
+    if (timingHint === 'start') {
+      if (/(start|from|begin|开始|起始|入学|入职)/.test(elementText)) score += 2.5;
+      if (/(end|until|finish|结束|截止|毕业|离职)/.test(elementText)) score -= 2;
+    }
+    if (timingHint === 'end') {
+      if (/(end|until|finish|结束|截止|毕业|离职)/.test(elementText)) score += 2.5;
+      if (/(start|from|begin|开始|起始|入学|入职)/.test(elementText)) score -= 2;
+    }
   }
 
   return score;
 }
 
-function locateElementByHeuristics(field, doc) {
+function locateElementByHeuristics(fieldEntry, doc) {
+  const field = fieldEntry.field || fieldEntry;
   const candidates = getLocatorCandidates(doc, field)
-    .map(el => ({ el, score: scoreElementForField(el, field) }))
+    .map(el => ({ el, score: scoreElementForField(el, fieldEntry) }))
     .filter(item => Number.isFinite(item.score))
     .sort((left, right) => right.score - left.score);
 
@@ -232,7 +529,8 @@ function locateElementByHeuristics(field, doc) {
   return best.el;
 }
 
-function locateElement(field, doc) {
+function locateElement(fieldEntry, doc) {
+  const field = fieldEntry.field || fieldEntry;
   if (field.selector) {
     try {
       const el = doc.querySelector(field.selector);
@@ -249,7 +547,7 @@ function locateElement(field, doc) {
     const el = doc.querySelector(`[name="${CSS.escape(field.name)}"]`);
     if (el) return el;
   }
-  return locateElementByHeuristics(field, doc);
+  return locateElementByHeuristics(fieldEntry, doc);
 }
 
 function parseRepeatPath(key = '') {
@@ -269,7 +567,7 @@ function hasMeaningfulFields(entry = {}) {
   return Object.values(entry || {}).some(value => value !== '' && value != null);
 }
 
-const REPEATABLE_PROFILE_SECTIONS = ['education', 'experience', 'projects', 'languages', 'familyMembers'];
+const REPEATABLE_PROFILE_SECTIONS = ['education', 'experience', 'projects', 'awards', 'competitions', 'languages', 'languageExams', 'developerLanguages', 'familyMembers'];
 
 function getRepeatTargets(profile = {}) {
   return REPEATABLE_PROFILE_SECTIONS
@@ -304,15 +602,37 @@ async function rerunMatch(profile) {
   return { detectResult, matchResult };
 }
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 const REPEAT_SECTION_PATTERNS = {
+  awards: /(\u83b7\u5956\u4fe1\u606f|\u83b7\u5956\u7ecf\u5386|\u5956\u9879|\u8363\u8a89|award|honor)/i,
+  competitions: /(\u7ade\u8d5b|\u5927\u8d5b|\u6bd4\u8d5b|\u5927\u8d5b\u7ecf\u5386|\u7ade\u8d5b\u7ecf\u5386|\u6bd4\u8d5b\u7ecf\u5386|\u8d5b\u4e8b\u7ecf\u5386|competition)/i,
+  developerLanguages: /(\u5f00\u53d1\u8bed\u8a00|\u6280\u672f\u5f00\u53d1\u8bed\u8a00|\u7f16\u7a0b\u8bed\u8a00|programming language|coding language)/i,
   education: /(教育经历|教育背景|学校|学历|学位|入学|毕业|education|academic)/i,
   experience: /(实习经历|工作经历|工作经验|单位名称|职位名称|实习内容|experience|intern)/i,
   projects: /(在校实践|校内实践|校园实践|项目经历|项目名称|实践名称|实践描述|project|practice)/i,
   languages: /(语言能力|外语能力|语种|语言类型|掌握程度|听说|读写|language)/i,
+  languageExams: /(\u5916\u8bed\u8003\u8bd5|\u8bed\u8a00\u8003\u8bd5|\u8003\u8bd5\u7b49\u7ea7|\u5916\u8bed\u8003\u8bd5\/\u7b49\u7ea7|language exam|english test)/i,
   familyMembers: /(家庭情况|家庭成员|家属|与本人关系|身份类别|家庭所在地|family)/i,
 };
+const LANGUAGE_EXAM_REPEAT_STRUCTURAL_PATTERN = /(language_exam|exam_type|\b(?:cet|toefl|ielts|gre|gmat|tem|sat|act|cerf)\b)/i;
 
 function inferRepeatSectionFromField(field = {}) {
+  const structuralText = [
+    field.selector,
+    field.name,
+    field.id,
+    field.repeatGroupKey,
+  ].filter(Boolean).join(' ');
+
+  if (/(project_list|formily-item-project_list|formily-item-role\b|formily-item-link\b)/i.test(structuralText)) return 'projects';
+  if (/(career_list|formily-item-career_list|formily-item-company\b|formily-item-title\b)/i.test(structuralText)) return 'experience';
+  if (/(education_list|formily-item-school\b|formily-item-degree\b|field_of_study|education_type)/i.test(structuralText)) return 'education';
+  if (/(formily-item-language\b|formily-item-proficiency\b)/i.test(structuralText)) return 'languages';
+  if (LANGUAGE_EXAM_REPEAT_STRUCTURAL_PATTERN.test(structuralText)) return 'languageExams';
+
   for (const [sectionKey, pattern] of Object.entries(REPEAT_SECTION_PATTERNS)) {
     if (pattern.test(String(field.sectionLabel || ''))) return sectionKey;
   }
@@ -363,11 +683,18 @@ function getRepeatCountFromDetect(detectResult, sectionKey) {
   for (const form of detectResult.forms) {
     for (const field of form.fields || []) {
       if (inferRepeatSectionFromField(field) !== sectionKey) continue;
+      const labelText = String(field.label || '').trim();
+      if (
+        field.type === 'checkbox' &&
+        /^(没有|无).*(经历|项目|奖项|竞赛|作品|语言|证书)/.test(labelText)
+      ) {
+        continue;
+      }
       if (field.repeatGroupKey) {
         groupCounts.set(field.repeatGroupKey, (groupCounts.get(field.repeatGroupKey) || 0) + 1);
       }
 
-      const normalizedLabel = String(field.label || '').trim();
+      const normalizedLabel = labelText;
       if (!normalizedLabel || normalizedLabel === '至今') continue;
       labelCounts.set(normalizedLabel, (labelCounts.get(normalizedLabel) || 0) + 1);
     }
@@ -381,6 +708,22 @@ function getRepeatCountFromDetect(detectResult, sectionKey) {
   // can otherwise inflate the count for sections that only have one visible item.
   if (groupCount) return groupCount;
   return labelCount;
+}
+
+async function rerunMatchUntilRepeatCountChanges(profile, sectionKey, previousCount, attempts = 6) {
+  let latest = null;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (attempt > 0) {
+      await delay(250 * attempt);
+    }
+    latest = await rerunMatch(profile);
+    const nextCount = getRepeatCountFromDetect(latest?.detectResult, sectionKey)
+      || getRepeatCount(latest?.matchResult, sectionKey);
+    if (nextCount > previousCount) {
+      return latest;
+    }
+  }
+  return latest;
 }
 
 function mergeMappings(baseMappings, repeatMappings) {
@@ -443,7 +786,7 @@ async function ensureRepeatableSections(profile, adapter, report, reportUtils) {
       });
 
       if (!outcome?.created) {
-        const fallbackMatch = await rerunMatch(profile);
+        const fallbackMatch = await rerunMatchUntilRepeatCountChanges(profile, target.section, currentCount);
         const fallbackCount = getRepeatCountFromDetect(fallbackMatch?.detectResult, target.section)
           || getRepeatCount(fallbackMatch?.matchResult, target.section);
         if (fallbackCount > currentCount) {
@@ -462,7 +805,7 @@ async function ensureRepeatableSections(profile, adapter, report, reportUtils) {
       }
 
       sectionReport.created += 1;
-      latest = await rerunMatch(profile);
+      latest = await rerunMatchUntilRepeatCountChanges(profile, target.section, currentCount);
       const nextCount = getRepeatCountFromDetect(latest?.detectResult, target.section)
         || getRepeatCount(latest?.matchResult, target.section);
       if (nextCount <= currentCount) {
@@ -475,6 +818,17 @@ async function ensureRepeatableSections(profile, adapter, report, reportUtils) {
 
     repeatSupport[target.section] = currentCount >= target.items.length;
     reportUtils.upsertRepeatSection(report, sectionReport);
+  }
+
+  for (const sectionReport of report.repeatSections || []) {
+    const finalCount = getRepeatCountFromDetect(latest?.detectResult, sectionReport.section)
+      || getRepeatCount(latest?.matchResult, sectionReport.section);
+    if (finalCount >= sectionReport.expected) {
+      repeatSupport[sectionReport.section] = true;
+      sectionReport.warnings = (sectionReport.warnings || []).filter(
+        warning => !String(warning || '').endsWith('repeat_item_created_but_not_detected')
+      );
+    }
   }
 
   if (latest?.matchResult?.diagnostics) {
@@ -538,7 +892,11 @@ async function fillField(fieldEntry, doc, context) {
     return { fieldId: field.id, status: 'skipped', message: 'empty_value', key: getFieldKey(fieldEntry) };
   }
 
-  const el = locateElement(field, doc);
+  let el = locateElement(fieldEntry, doc);
+  if (!el) {
+    await adapter?.ensureFieldReady?.({ fieldEntry, document: doc, location });
+    el = locateElement(fieldEntry, doc);
+  }
   if (!el) {
     report.warnings.push(`element_not_found:${field.id}`);
     return { fieldId: field.id, status: 'error', message: 'element_not_found', key: getFieldKey(fieldEntry) };
@@ -560,15 +918,20 @@ async function fillField(fieldEntry, doc, context) {
   const value = runtimeValue.value;
   const utils = {
     setInputValue,
+    setTextLikeValue,
     setNativeRadioValue,
     setNativeSelectValue,
+    setGenericChoiceValue,
+    setGenericDateValue,
     triggerEvents,
   };
 
   try {
     if (field.type === 'select') {
       const adapterHandled = await adapter?.setSelectValue?.({ element: el, field, value, context, utils });
-      const ok = adapterHandled == null ? setNativeSelectValue(el, value) : (adapterHandled || setNativeSelectValue(el, value));
+      const ok = adapterHandled == null
+        ? (setNativeSelectValue(el, value) || await setGenericChoiceValue(el, value))
+        : (adapterHandled || setNativeSelectValue(el, value) || await setGenericChoiceValue(el, value));
       return { fieldId: field.id, status: ok ? 'filled' : 'skipped', message: ok ? '' : 'no_matching_option', key: getFieldKey(fieldEntry) };
     }
 
@@ -586,8 +949,12 @@ async function fillField(fieldEntry, doc, context) {
     }
 
     if (field.type === 'date') {
-      const adapterHandled = await adapter?.setDateValue?.({ element: el, field, value: formatDate(value), context, utils });
-      if (adapterHandled == null || adapterHandled === false) setInputValue(el, formatDate(value));
+      const formattedValue = formatDateForElement(el, value);
+      const adapterHandled = await adapter?.setDateValue?.({ element: el, field, value: formattedValue, context, utils });
+      if (adapterHandled == null || adapterHandled === false) {
+        const ok = await setGenericDateValue(el, formattedValue, fieldEntry);
+        if (!ok) setTextLikeValue(el, formattedValue);
+      }
       return { fieldId: field.id, status: 'filled', message: '', key: getFieldKey(fieldEntry) };
     }
 
@@ -604,7 +971,12 @@ async function fillField(fieldEntry, doc, context) {
       return { fieldId: field.id, status: 'skipped', message: 'manual_resume_upload_required', key: getFieldKey(fieldEntry) };
     }
 
-    setInputValue(el, value);
+    if (looksLikeChoiceControl(el, field)) {
+      const ok = await setGenericChoiceValue(el, value);
+      if (!ok) setTextLikeValue(el, value);
+    } else {
+      setTextLikeValue(el, value);
+    }
     return { fieldId: field.id, status: 'filled', message: '', key: getFieldKey(fieldEntry) };
   } catch (error) {
     report.warnings.push(`fill_error:${field.id}:${error.message}`);
@@ -621,6 +993,15 @@ function applyFieldOutcomesToRepeatSections(report, results) {
       if (parsed?.section === section.section) indices.add(parsed.index);
     }
     section.filled = indices.size;
+  }
+}
+
+function reconcileRepeatSectionWarnings(report) {
+  for (const section of report.repeatSections || []) {
+    if ((section.filled || 0) < (section.expected || 0)) continue;
+    section.warnings = (section.warnings || []).filter(
+      warning => !String(warning || '').endsWith('repeat_item_created_but_not_detected')
+    );
   }
 }
 
@@ -675,6 +1056,7 @@ async function fillForms(mappings, options = {}) {
   }
 
   applyFieldOutcomesToRepeatSections(report, results);
+  reconcileRepeatSectionWarnings(report);
 
   const adapterHints = adapter?.getDiagnosticsHints?.({
     document,
@@ -683,6 +1065,17 @@ async function fillForms(mappings, options = {}) {
     repeatSupport: repeatResolution.repeatSupport,
   }) || [];
   report.warnings.push(...adapterHints);
+
+  const adapterDiagnostics = adapter?.getRuntimeDiagnostics?.() || null;
+  if (adapterDiagnostics?.triggerAttempts?.length) {
+    report.adapterDiagnostics = {
+      ...(report.adapterDiagnostics || {}),
+      triggerAttempts: [
+        ...((report.adapterDiagnostics && report.adapterDiagnostics.triggerAttempts) || []),
+        ...adapterDiagnostics.triggerAttempts,
+      ],
+    };
+  }
 
   const afterFillMeta = await adapter?.afterFill?.({ document, location, results, report });
   if (afterFillMeta?.warnings?.length) report.warnings.push(...afterFillMeta.warnings);
@@ -696,7 +1089,7 @@ async function fillForms(mappings, options = {}) {
 
 function highlightFieldEl(field) {
   const doc = getResultDocument(field);
-  const el = locateElement(field, doc);
+  const el = locateElement({ field }, doc);
   if (!el) return false;
 
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -810,6 +1203,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   return true;
 });
+
+window.__jobpilotFormFillerDebug = {
+  getFieldTimingHint,
+  getRepeatCountFromDetect,
+  inferRepeatSectionFromField,
+  reconcileRepeatSectionWarnings,
+  resolveDateTargetElement,
+  scoreElementForField,
+};
 
 window.__jobpilotFillForms = fillForms;
 window.__jobpilotFillField = fillField;

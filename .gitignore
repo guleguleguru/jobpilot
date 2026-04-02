@@ -17,11 +17,18 @@ Thumbs.db
 *.log
 *.tmp
 *.zip
+tmp/
+.tmp/
 
 # Local debug artifacts
 jobpilot-debug-*.json
 jobpilot_upgrade_prompt.md
-/å¤ªå¹³/
+*.png
+*.jpg
 
 # Personal local files
-*ç®€åŽ†*.pdf
+*¼òÀú.pdf
+*resume*.pdf
+*-auth-state.json
+
+*.pdf

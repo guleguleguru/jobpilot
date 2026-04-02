@@ -32,6 +32,8 @@
         "content/site-adapters/base-adapter.js",
         "content/site-adapters/index.js",
         "content/site-adapters/china-taiping.js",
+        "content/site-adapters/antgroup.js",
+        "content/site-adapters/generic.js",
         "content/label-matcher.js",
         "content/file-uploader.js",
         "content/form-filler.js"
@@ -72,6 +74,7 @@
         "lib/pdf.min.mjs",
         "lib/pdf.worker.min.mjs",
         "lib/enum-mappings.js",
+        "lib/semantic-field-memory.js",
         "lib/fill-report.js",
         "data/default-profile.json"
       ],

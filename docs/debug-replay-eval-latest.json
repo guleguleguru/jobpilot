@@ -1,0 +1,2076 @@
+{
+  "generatedAt": "2026-04-01T03:45:51.164Z",
+  "mode": "leave-one-out",
+  "files": [
+    {
+      "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+      "hostname": "cntp.zhiye.com",
+      "original": {
+        "matched": 2,
+        "totalFields": 61
+      },
+      "baseline": {
+        "matched": 1,
+        "unmatched": 60,
+        "unmappedFields": 60,
+        "missingRequiredFields": 0,
+        "remainingUnmappedLabels": [
+          "搜索职位关键词",
+          "请输入",
+          "请输入",
+          "请输入",
+          "请输入",
+          "请输入",
+          "form_0_field_7",
+          "form_0_field_8",
+          "请输入",
+          "请输入",
+          "form_0_field_11",
+          "请输入",
+          "form_0_field_13",
+          "form_0_field_14",
+          "form_0_field_15",
+          "form_0_field_16",
+          "请输入",
+          "请输入",
+          "form_0_field_19",
+          "请输入",
+          "请输入",
+          "请输入",
+          "请输入",
+          "请输入",
+          "form_0_field_25",
+          "form_0_field_26",
+          "请输入",
+          "请输入",
+          "请输入",
+          "form_0_field_30",
+          "form_0_field_31",
+          "form_0_field_32",
+          "form_0_field_33",
+          "form_0_field_34",
+          "form_0_field_35",
+          "请输入",
+          "请输入",
+          "请输入",
+          "请输入",
+          "form_0_field_40",
+          "form_0_field_41",
+          "form_0_field_42",
+          "请输入",
+          "请输入",
+          "form_0_field_45",
+          "form_0_field_46",
+          "form_0_field_47",
+          "form_0_field_48",
+          "form_0_field_49",
+          "请输入",
+          "请输入",
+          "form_0_field_52",
+          "form_0_field_53",
+          "请输入",
+          "请输入",
+          "form_0_field_56",
+          "请输入",
+          "form_0_field_58",
+          "form_0_field_59",
+          "form_0_field_60"
+        ]
+      },
+      "trained": {
+        "matched": 2,
+        "unmatched": 59,
+        "unmappedFields": 59,
+        "missingRequiredFields": 0,
+        "remainingUnmappedLabels": [
+          "请输入",
+          "请输入",
+          "请输入",
+          "请输入",
+          "请输入",
+          "form_0_field_7",
+          "form_0_field_8",
+          "请输入",
+          "请输入",
+          "form_0_field_11",
+          "请输入",
+          "form_0_field_13",
+          "form_0_field_14",
+          "form_0_field_15",
+          "form_0_field_16",
+          "请输入",
+          "请输入",
+          "form_0_field_19",
+          "请输入",
+          "请输入",
+          "请输入",
+          "请输入",
+          "请输入",
+          "form_0_field_25",
+          "form_0_field_26",
+          "请输入",
+          "请输入",
+          "请输入",
+          "form_0_field_30",
+          "form_0_field_31",
+          "form_0_field_32",
+          "form_0_field_33",
+          "form_0_field_34",
+          "form_0_field_35",
+          "请输入",
+          "请输入",
+          "请输入",
+          "请输入",
+          "form_0_field_40",
+          "form_0_field_41",
+          "form_0_field_42",
+          "请输入",
+          "请输入",
+          "form_0_field_45",
+          "form_0_field_46",
+          "form_0_field_47",
+          "form_0_field_48",
+          "form_0_field_49",
+          "请输入",
+          "请输入",
+          "form_0_field_52",
+          "form_0_field_53",
+          "请输入",
+          "请输入",
+          "form_0_field_56",
+          "请输入",
+          "form_0_field_58",
+          "form_0_field_59",
+          "form_0_field_60"
+        ]
+      },
+      "trainingSamples": 79,
+      "improvement": {
+        "fromOriginalMatched": 0,
+        "fromBaselineMatched": 1,
+        "baselineUnmappedReduction": 1,
+        "baselineMissingRequiredReduction": 0
+      }
+    },
+    {
+      "file": "jobpilot-debug-cntp.zhiye.com-20260328-220246.json",
+      "hostname": "cntp.zhiye.com",
+      "original": {
+        "matched": 26,
+        "totalFields": 61
+      },
+      "baseline": {
+        "matched": 5,
+        "unmatched": 56,
+        "unmappedFields": 32,
+        "missingRequiredFields": 0,
+        "remainingUnmappedLabels": [
+          "搜索职位关键词",
+          "form_0_field_7",
+          "form_0_field_8",
+          "form_0_field_11",
+          "form_0_field_13",
+          "form_0_field_14",
+          "form_0_field_15",
+          "form_0_field_16",
+          "form_0_field_19",
+          "form_0_field_25",
+          "form_0_field_26",
+          "form_0_field_30",
+          "form_0_field_31",
+          "form_0_field_32",
+          "form_0_field_33",
+          "form_0_field_34",
+          "至今",
+          "form_0_field_40",
+          "form_0_field_41",
+          "至今",
+          "证明人",
+          "form_0_field_45",
+          "form_0_field_46",
+          "form_0_field_47",
+          "form_0_field_48",
+          "form_0_field_49",
+          "form_0_field_52",
+          "form_0_field_53",
+          "form_0_field_56",
+          "form_0_field_58",
+          "应聘者声明",
+          "应聘者声明"
+        ]
+      },
+      "trained": {
+        "matched": 6,
+        "unmatched": 55,
+        "unmappedFields": 31,
+        "missingRequiredFields": 0,
+        "remainingUnmappedLabels": [
+          "form_0_field_7",
+          "form_0_field_8",
+          "form_0_field_11",
+          "form_0_field_13",
+          "form_0_field_14",
+          "form_0_field_15",
+          "form_0_field_16",
+          "form_0_field_19",
+          "form_0_field_25",
+          "form_0_field_26",
+          "form_0_field_30",
+          "form_0_field_31",
+          "form_0_field_32",
+          "form_0_field_33",
+          "form_0_field_34",
+          "至今",
+          "form_0_field_40",
+          "form_0_field_41",
+          "至今",
+          "证明人",
+          "form_0_field_45",
+          "form_0_field_46",
+          "form_0_field_47",
+          "form_0_field_48",
+          "form_0_field_49",
+          "form_0_field_52",
+          "form_0_field_53",
+          "form_0_field_56",
+          "form_0_field_58",
+          "应聘者声明",
+          "应聘者声明"
+        ]
+      },
+      "trainingSamples": 37,
+      "improvement": {
+        "fromOriginalMatched": -20,
+        "fromBaselineMatched": 1,
+        "baselineUnmappedReduction": 1,
+        "baselineMissingRequiredReduction": 0
+      }
+    },
+    {
+      "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+      "hostname": "join.qq.com",
+      "original": {
+        "matched": 16,
+        "totalFields": 60
+      },
+      "baseline": {
+        "matched": 16,
+        "unmatched": 44,
+        "unmappedFields": 10,
+        "missingRequiredFields": 34,
+        "remainingUnmappedLabels": [
+          "内推串码",
+          "感兴趣的事业群*",
+          "无实习经历",
+          "至今",
+          "无项目经历",
+          "至今",
+          "无获奖信息",
+          "以上资料证明人*",
+          "愿意接收腾讯子公司的校招信息推送",
+          "我已阅读并同意"
+        ]
+      },
+      "trained": {
+        "matched": 16,
+        "unmatched": 44,
+        "unmappedFields": 10,
+        "missingRequiredFields": 34,
+        "remainingUnmappedLabels": [
+          "内推串码",
+          "感兴趣的事业群*",
+          "无实习经历",
+          "至今",
+          "无项目经历",
+          "至今",
+          "无获奖信息",
+          "以上资料证明人*",
+          "愿意接收腾讯子公司的校招信息推送",
+          "我已阅读并同意"
+        ]
+      },
+      "trainingSamples": 60,
+      "improvement": {
+        "fromOriginalMatched": 0,
+        "fromBaselineMatched": 0,
+        "baselineUnmappedReduction": 0,
+        "baselineMissingRequiredReduction": 0
+      }
+    },
+    {
+      "file": "jobpilot-debug-talent.antgroup.com-20260331-174545.json",
+      "hostname": "talent.antgroup.com",
+      "original": {
+        "matched": 12,
+        "totalFields": 30
+      },
+      "baseline": {
+        "matched": 9,
+        "unmatched": 21,
+        "unmappedFields": 9,
+        "missingRequiredFields": 1,
+        "remainingUnmappedLabels": [
+          "家庭所在城市",
+          "学历",
+          "时间无准确的毕业时间可填写预计毕业时间",
+          "奖励与荣誉",
+          "技术开发语言",
+          "其他信息",
+          "招聘信息来源",
+          "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容",
+          "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容"
+        ]
+      },
+      "trained": {
+        "matched": 10,
+        "unmatched": 20,
+        "unmappedFields": 8,
+        "missingRequiredFields": 1,
+        "remainingUnmappedLabels": [
+          "家庭所在城市",
+          "时间无准确的毕业时间可填写预计毕业时间",
+          "奖励与荣誉",
+          "技术开发语言",
+          "其他信息",
+          "招聘信息来源",
+          "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容",
+          "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容"
+        ]
+      },
+      "trainingSamples": 65,
+      "improvement": {
+        "fromOriginalMatched": -2,
+        "fromBaselineMatched": 1,
+        "baselineUnmappedReduction": 1,
+        "baselineMissingRequiredReduction": 0
+      }
+    }
+  ],
+  "aggregate": {
+    "originalMatched": 56,
+    "baselineMatched": 31,
+    "trainedMatched": 34,
+    "totalFields": 212,
+    "baselineUnmapped": 111,
+    "trainedUnmapped": 108,
+    "baselineMissingRequiredFields": 35,
+    "trainedMissingRequiredFields": 35
+  },
+  "topClusters": {
+    "baseline": [
+      {
+        "signature": "请输入::text",
+        "count": 27,
+        "hostnames": [
+          "cntp.zhiye.com"
+        ],
+        "files": [
+          "jobpilot-debug-cntp.zhiye.com-20260328-130658.json"
+        ],
+        "labels": [
+          "请输入"
+        ],
+        "sections": [],
+        "types": [
+          "text"
+        ],
+        "reasons": [],
+        "topCandidateKeys": [
+          "personal.englishName",
+          "personal.fullName",
+          "personal.fullNamePinyin"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "请输入",
+            "section": "",
+            "type": "text",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "personal.fullName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.fullNamePinyin",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.englishName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "请输入",
+            "section": "",
+            "type": "text",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "personal.fullName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.fullNamePinyin",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.englishName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "请输入",
+            "section": "",
+            "type": "text",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "personal.fullName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.fullNamePinyin",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.englishName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              }
+            ]
+          }
+        ],
+        "category": "detector_or_label_gap",
+        "recommendation": "优先修表单检测和标签提取质量"
+      },
+      {
+        "signature": "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容::声明条款::checkbox",
+        "count": 2,
+        "hostnames": [
+          "talent.antgroup.com"
+        ],
+        "files": [
+          "jobpilot-debug-talent.antgroup.com-20260331-174545.json"
+        ],
+        "labels": [
+          "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容"
+        ],
+        "sections": [
+          "声明条款"
+        ],
+        "types": [
+          "checkbox"
+        ],
+        "reasons": [],
+        "topCandidateKeys": [
+          "jobPreferences.expectedLocations",
+          "jobPreferences.expectedPositions",
+          "jobPreferences.interviewLocations"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-talent.antgroup.com-20260331-174545.json",
+            "hostname": "talent.antgroup.com",
+            "label": "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容",
+            "section": "声明条款",
+            "type": "checkbox",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "jobPreferences.expectedLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.expectedPositions",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.interviewLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-talent.antgroup.com-20260331-174545.json",
+            "hostname": "talent.antgroup.com",
+            "label": "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容",
+            "section": "声明条款",
+            "type": "checkbox",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "jobPreferences.expectedLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.expectedPositions",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.interviewLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          }
+        ],
+        "category": "manual_or_no_autofill",
+        "recommendation": "保持人工确认，不建议默认自动填写"
+      },
+      {
+        "signature": "开发语言::技能信息::text",
+        "count": 2,
+        "hostnames": [
+          "join.qq.com"
+        ],
+        "files": [
+          "jobpilot-debug-join.qq.com-20260331-175723.json"
+        ],
+        "labels": [
+          "开发语言*"
+        ],
+        "sections": [
+          "技能信息"
+        ],
+        "types": [
+          "text"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "developerLanguages[].level",
+          "developerLanguages[].name",
+          "skills"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "开发语言*",
+            "section": "技能信息",
+            "type": "text",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "developerLanguages[].name",
+                "score": 18.39,
+                "exactAliasHit": true,
+                "sectionBucket": "developerLanguages"
+              },
+              {
+                "key": "developerLanguages[].level",
+                "score": 8.23,
+                "exactAliasHit": false,
+                "sectionBucket": "developerLanguages"
+              },
+              {
+                "key": "skills",
+                "score": 4.85,
+                "exactAliasHit": false,
+                "sectionBucket": ""
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "开发语言*",
+            "section": "技能信息",
+            "type": "text",
+            "placeholder": "请输入你擅长的开发语言",
+            "candidateHints": [
+              {
+                "key": "developerLanguages[].name",
+                "score": 20.79,
+                "exactAliasHit": true,
+                "sectionBucket": "developerLanguages"
+              },
+              {
+                "key": "developerLanguages[].level",
+                "score": 8.11,
+                "exactAliasHit": false,
+                "sectionBucket": "developerLanguages"
+              },
+              {
+                "key": "skills",
+                "score": 4.83,
+                "exactAliasHit": false,
+                "sectionBucket": ""
+              }
+            ]
+          }
+        ],
+        "category": "schema_gap",
+        "recommendation": "补 canonical schema 或 customFields 归档规则"
+      },
+      {
+        "signature": "起止时间::当前教育经历::text",
+        "count": 2,
+        "hostnames": [
+          "join.qq.com"
+        ],
+        "files": [
+          "jobpilot-debug-join.qq.com-20260331-175723.json"
+        ],
+        "labels": [
+          "起止时间*"
+        ],
+        "sections": [
+          "当前教育经历"
+        ],
+        "types": [
+          "text"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [],
+        "examples": [
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "起止时间*",
+            "section": "当前教育经历",
+            "type": "text",
+            "placeholder": "选择日期",
+            "candidateHints": []
+          },
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "起止时间*",
+            "section": "当前教育经历",
+            "type": "text",
+            "placeholder": "选择日期",
+            "candidateHints": []
+          }
+        ],
+        "category": "structural_control",
+        "recommendation": "补结构启发式或控件交互逻辑"
+      },
+      {
+        "signature": "请输入::textarea",
+        "count": 2,
+        "hostnames": [
+          "cntp.zhiye.com"
+        ],
+        "files": [
+          "jobpilot-debug-cntp.zhiye.com-20260328-130658.json"
+        ],
+        "labels": [
+          "请输入"
+        ],
+        "sections": [],
+        "types": [
+          "textarea"
+        ],
+        "reasons": [],
+        "topCandidateKeys": [
+          "education[].campusPositions",
+          "education[].campusPractice",
+          "education[].customFields.papers"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "请输入",
+            "section": "",
+            "type": "textarea",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "education[].campusPositions",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].campusPractice",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].customFields.papers",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "请输入",
+            "section": "",
+            "type": "textarea",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "education[].campusPositions",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].campusPractice",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].customFields.papers",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              }
+            ]
+          }
+        ],
+        "category": "detector_or_label_gap",
+        "recommendation": "优先修表单检测和标签提取质量"
+      },
+      {
+        "signature": "搜索职位关键词::text",
+        "count": 2,
+        "hostnames": [
+          "cntp.zhiye.com"
+        ],
+        "files": [
+          "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+          "jobpilot-debug-cntp.zhiye.com-20260328-220246.json"
+        ],
+        "labels": [
+          "搜索职位关键词"
+        ],
+        "sections": [],
+        "types": [
+          "text"
+        ],
+        "reasons": [],
+        "topCandidateKeys": [
+          "experience[].title",
+          "familyMembers[].jobTitle",
+          "jobPreferences.expectedPositions"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "搜索职位关键词",
+            "section": "",
+            "type": "text",
+            "placeholder": "搜索职位关键词",
+            "candidateHints": [
+              {
+                "key": "experience[].title",
+                "score": 9.87,
+                "exactAliasHit": false,
+                "sectionBucket": "experience"
+              },
+              {
+                "key": "familyMembers[].jobTitle",
+                "score": 9.52,
+                "exactAliasHit": false,
+                "sectionBucket": "family"
+              },
+              {
+                "key": "jobPreferences.expectedPositions",
+                "score": 0.35,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-220246.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "搜索职位关键词",
+            "section": "",
+            "type": "text",
+            "placeholder": "搜索职位关键词",
+            "candidateHints": [
+              {
+                "key": "experience[].title",
+                "score": 9.87,
+                "exactAliasHit": false,
+                "sectionBucket": "experience"
+              },
+              {
+                "key": "familyMembers[].jobTitle",
+                "score": 9.52,
+                "exactAliasHit": false,
+                "sectionBucket": "family"
+              },
+              {
+                "key": "jobPreferences.expectedPositions",
+                "score": 0.35,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          }
+        ],
+        "category": "detector_or_label_gap",
+        "recommendation": "优先修表单检测和标签提取质量"
+      },
+      {
+        "signature": "应聘者声明::附加信息是否有直系、旁系、姻亲亲属就职中国太平集团或集团关联企业请选择添加附加信息::radio",
+        "count": 2,
+        "hostnames": [
+          "cntp.zhiye.com"
+        ],
+        "files": [
+          "jobpilot-debug-cntp.zhiye.com-20260328-220246.json"
+        ],
+        "labels": [
+          "应聘者声明"
+        ],
+        "sections": [
+          "附加信息是否有直系、旁系、姻亲亲属就职中国太平集团或集团关联企业 请选择添加附加信息"
+        ],
+        "types": [
+          "radio"
+        ],
+        "reasons": [],
+        "topCandidateKeys": [
+          "jobPreferences.availableFrom",
+          "jobPreferences.expectedLocations",
+          "jobPreferences.expectedPositions"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-220246.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "应聘者声明",
+            "section": "附加信息是否有直系、旁系、姻亲亲属就职中国太平集团或集团关联企业 请选择添加附加信息",
+            "type": "radio",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "jobPreferences.expectedPositions",
+                "score": 0.82,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.availableFrom",
+                "score": 0.82,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.expectedLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-220246.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "应聘者声明",
+            "section": "附加信息是否有直系、旁系、姻亲亲属就职中国太平集团或集团关联企业 请选择添加附加信息",
+            "type": "radio",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "jobPreferences.expectedPositions",
+                "score": 0.82,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.availableFrom",
+                "score": 0.82,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.expectedLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          }
+        ],
+        "category": "manual_or_no_autofill",
+        "recommendation": "保持人工确认，不建议默认自动填写"
+      },
+      {
+        "signature": "参加面试城市::意向信息::text",
+        "count": 1,
+        "hostnames": [
+          "join.qq.com"
+        ],
+        "files": [
+          "jobpilot-debug-join.qq.com-20260331-175723.json"
+        ],
+        "labels": [
+          "参加面试城市*"
+        ],
+        "sections": [
+          "意向信息"
+        ],
+        "types": [
+          "text"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "experience[].department",
+          "jobPreferences.expectedLocations",
+          "jobPreferences.interviewLocations"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "参加面试城市*",
+            "section": "意向信息",
+            "type": "text",
+            "placeholder": "请输入面试城市",
+            "candidateHints": [
+              {
+                "key": "jobPreferences.interviewLocations",
+                "score": 15.07,
+                "exactAliasHit": true,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "experience[].department",
+                "score": 3.68,
+                "exactAliasHit": false,
+                "sectionBucket": "experience"
+              },
+              {
+                "key": "jobPreferences.expectedLocations",
+                "score": 1.2,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          }
+        ],
+        "category": "schema_gap",
+        "recommendation": "补 canonical schema 或 customFields 归档规则"
+      },
+      {
+        "signature": "成绩排名::当前教育经历::text",
+        "count": 1,
+        "hostnames": [
+          "join.qq.com"
+        ],
+        "files": [
+          "jobpilot-debug-join.qq.com-20260331-175723.json"
+        ],
+        "labels": [
+          "成绩排名"
+        ],
+        "sections": [
+          "当前教育经历"
+        ],
+        "types": [
+          "text"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "education[].degree",
+          "education[].ranking",
+          "education[].school"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "成绩排名",
+            "section": "当前教育经历",
+            "type": "text",
+            "placeholder": "请选择成绩排名",
+            "candidateHints": [
+              {
+                "key": "education[].ranking",
+                "score": 10.34,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].school",
+                "score": 2.01,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].degree",
+                "score": 1.94,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              }
+            ]
+          }
+        ],
+        "category": "detector_or_label_gap",
+        "recommendation": "优先修表单检测和标签提取质量"
+      },
+      {
+        "signature": "出生日期::家庭情况::date",
+        "count": 1,
+        "hostnames": [
+          "cntp.zhiye.com"
+        ],
+        "files": [
+          "jobpilot-debug-cntp.zhiye.com-20260328-220246.json"
+        ],
+        "labels": [
+          "出生日期"
+        ],
+        "sections": [
+          "家庭情况"
+        ],
+        "types": [
+          "date"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "familyMembers[].birthDate",
+          "familyMembers[].employer",
+          "familyMembers[].name"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-220246.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "出生日期",
+            "section": "家庭情况",
+            "type": "date",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "familyMembers[].birthDate",
+                "score": 13.18,
+                "exactAliasHit": true,
+                "sectionBucket": "family"
+              },
+              {
+                "key": "familyMembers[].name",
+                "score": 3.06,
+                "exactAliasHit": false,
+                "sectionBucket": "family"
+              },
+              {
+                "key": "familyMembers[].employer",
+                "score": 2.38,
+                "exactAliasHit": false,
+                "sectionBucket": "family"
+              }
+            ]
+          }
+        ],
+        "category": "detector_or_label_gap",
+        "recommendation": "优先修表单检测和标签提取质量"
+      },
+      {
+        "signature": "大赛等级::大赛经历::search",
+        "count": 1,
+        "hostnames": [
+          "talent.antgroup.com"
+        ],
+        "files": [
+          "jobpilot-debug-talent.antgroup.com-20260331-174545.json"
+        ],
+        "labels": [
+          "大赛等级"
+        ],
+        "sections": [
+          "大赛经历"
+        ],
+        "types": [
+          "search"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "competitions[].description",
+          "competitions[].level",
+          "competitions[].name"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-talent.antgroup.com-20260331-174545.json",
+            "hostname": "talent.antgroup.com",
+            "label": "大赛等级",
+            "section": "大赛经历",
+            "type": "search",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "competitions[].level",
+                "score": 17.28,
+                "exactAliasHit": true,
+                "sectionBucket": "competitions"
+              },
+              {
+                "key": "competitions[].description",
+                "score": 3.79,
+                "exactAliasHit": false,
+                "sectionBucket": "competitions"
+              },
+              {
+                "key": "competitions[].name",
+                "score": 1.37,
+                "exactAliasHit": false,
+                "sectionBucket": "competitions"
+              }
+            ]
+          }
+        ],
+        "category": "schema_gap",
+        "recommendation": "补 canonical schema 或 customFields 归档规则"
+      },
+      {
+        "signature": "大赛经历::大赛经历::textarea",
+        "count": 1,
+        "hostnames": [
+          "talent.antgroup.com"
+        ],
+        "files": [
+          "jobpilot-debug-talent.antgroup.com-20260331-174545.json"
+        ],
+        "labels": [
+          "大赛经历"
+        ],
+        "sections": [
+          "大赛经历"
+        ],
+        "types": [
+          "textarea"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "competitions[].description",
+          "skills"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-talent.antgroup.com-20260331-174545.json",
+            "hostname": "talent.antgroup.com",
+            "label": "大赛经历",
+            "section": "大赛经历",
+            "type": "textarea",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "competitions[].description",
+                "score": 18.3,
+                "exactAliasHit": true,
+                "sectionBucket": "competitions"
+              },
+              {
+                "key": "skills",
+                "score": 0.13,
+                "exactAliasHit": false,
+                "sectionBucket": ""
+              }
+            ]
+          }
+        ],
+        "category": "schema_gap",
+        "recommendation": "补 canonical schema 或 customFields 归档规则"
+      }
+    ],
+    "trained": [
+      {
+        "signature": "请输入::text",
+        "count": 27,
+        "hostnames": [
+          "cntp.zhiye.com"
+        ],
+        "files": [
+          "jobpilot-debug-cntp.zhiye.com-20260328-130658.json"
+        ],
+        "labels": [
+          "请输入"
+        ],
+        "sections": [],
+        "types": [
+          "text"
+        ],
+        "reasons": [],
+        "topCandidateKeys": [
+          "personal.englishName",
+          "personal.fullName",
+          "personal.fullNamePinyin"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "请输入",
+            "section": "",
+            "type": "text",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "personal.fullName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.fullNamePinyin",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.englishName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "请输入",
+            "section": "",
+            "type": "text",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "personal.fullName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.fullNamePinyin",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.englishName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "请输入",
+            "section": "",
+            "type": "text",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "personal.fullName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.fullNamePinyin",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.englishName",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              }
+            ]
+          }
+        ],
+        "category": "detector_or_label_gap",
+        "recommendation": "优先修表单检测和标签提取质量"
+      },
+      {
+        "signature": "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容::声明条款::checkbox",
+        "count": 2,
+        "hostnames": [
+          "talent.antgroup.com"
+        ],
+        "files": [
+          "jobpilot-debug-talent.antgroup.com-20260331-174545.json"
+        ],
+        "labels": [
+          "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容"
+        ],
+        "sections": [
+          "声明条款"
+        ],
+        "types": [
+          "checkbox"
+        ],
+        "reasons": [],
+        "topCandidateKeys": [
+          "jobPreferences.expectedLocations",
+          "jobPreferences.expectedPositions",
+          "jobPreferences.interviewLocations"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-talent.antgroup.com-20260331-174545.json",
+            "hostname": "talent.antgroup.com",
+            "label": "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容",
+            "section": "声明条款",
+            "type": "checkbox",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "jobPreferences.expectedLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.expectedPositions",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.interviewLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-talent.antgroup.com-20260331-174545.json",
+            "hostname": "talent.antgroup.com",
+            "label": "本人已详细阅读蚂蚁集团招聘信息声明并理解其中内容",
+            "section": "声明条款",
+            "type": "checkbox",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "jobPreferences.expectedLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.expectedPositions",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.interviewLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          }
+        ],
+        "category": "manual_or_no_autofill",
+        "recommendation": "保持人工确认，不建议默认自动填写"
+      },
+      {
+        "signature": "开发语言::技能信息::text",
+        "count": 2,
+        "hostnames": [
+          "join.qq.com"
+        ],
+        "files": [
+          "jobpilot-debug-join.qq.com-20260331-175723.json"
+        ],
+        "labels": [
+          "开发语言*"
+        ],
+        "sections": [
+          "技能信息"
+        ],
+        "types": [
+          "text"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "developerLanguages[].level",
+          "developerLanguages[].name",
+          "skills"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "开发语言*",
+            "section": "技能信息",
+            "type": "text",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "developerLanguages[].name",
+                "score": 18.39,
+                "exactAliasHit": true,
+                "sectionBucket": "developerLanguages"
+              },
+              {
+                "key": "developerLanguages[].level",
+                "score": 8.23,
+                "exactAliasHit": false,
+                "sectionBucket": "developerLanguages"
+              },
+              {
+                "key": "skills",
+                "score": 4.85,
+                "exactAliasHit": false,
+                "sectionBucket": ""
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "开发语言*",
+            "section": "技能信息",
+            "type": "text",
+            "placeholder": "请输入你擅长的开发语言",
+            "candidateHints": [
+              {
+                "key": "developerLanguages[].name",
+                "score": 20.79,
+                "exactAliasHit": true,
+                "sectionBucket": "developerLanguages"
+              },
+              {
+                "key": "developerLanguages[].level",
+                "score": 8.11,
+                "exactAliasHit": false,
+                "sectionBucket": "developerLanguages"
+              },
+              {
+                "key": "skills",
+                "score": 4.83,
+                "exactAliasHit": false,
+                "sectionBucket": ""
+              }
+            ]
+          }
+        ],
+        "category": "schema_gap",
+        "recommendation": "补 canonical schema 或 customFields 归档规则"
+      },
+      {
+        "signature": "起止时间::当前教育经历::text",
+        "count": 2,
+        "hostnames": [
+          "join.qq.com"
+        ],
+        "files": [
+          "jobpilot-debug-join.qq.com-20260331-175723.json"
+        ],
+        "labels": [
+          "起止时间*"
+        ],
+        "sections": [
+          "当前教育经历"
+        ],
+        "types": [
+          "text"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [],
+        "examples": [
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "起止时间*",
+            "section": "当前教育经历",
+            "type": "text",
+            "placeholder": "选择日期",
+            "candidateHints": []
+          },
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "起止时间*",
+            "section": "当前教育经历",
+            "type": "text",
+            "placeholder": "选择日期",
+            "candidateHints": []
+          }
+        ],
+        "category": "structural_control",
+        "recommendation": "补结构启发式或控件交互逻辑"
+      },
+      {
+        "signature": "请输入::textarea",
+        "count": 2,
+        "hostnames": [
+          "cntp.zhiye.com"
+        ],
+        "files": [
+          "jobpilot-debug-cntp.zhiye.com-20260328-130658.json"
+        ],
+        "labels": [
+          "请输入"
+        ],
+        "sections": [],
+        "types": [
+          "textarea"
+        ],
+        "reasons": [],
+        "topCandidateKeys": [
+          "education[].campusPositions",
+          "education[].campusPractice",
+          "education[].customFields.papers"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "请输入",
+            "section": "",
+            "type": "textarea",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "education[].campusPositions",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].campusPractice",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].customFields.papers",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-130658.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "请输入",
+            "section": "",
+            "type": "textarea",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "education[].campusPositions",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].campusPractice",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].customFields.papers",
+                "score": 0,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              }
+            ]
+          }
+        ],
+        "category": "detector_or_label_gap",
+        "recommendation": "优先修表单检测和标签提取质量"
+      },
+      {
+        "signature": "应聘者声明::附加信息是否有直系、旁系、姻亲亲属就职中国太平集团或集团关联企业请选择添加附加信息::radio",
+        "count": 2,
+        "hostnames": [
+          "cntp.zhiye.com"
+        ],
+        "files": [
+          "jobpilot-debug-cntp.zhiye.com-20260328-220246.json"
+        ],
+        "labels": [
+          "应聘者声明"
+        ],
+        "sections": [
+          "附加信息是否有直系、旁系、姻亲亲属就职中国太平集团或集团关联企业 请选择添加附加信息"
+        ],
+        "types": [
+          "radio"
+        ],
+        "reasons": [],
+        "topCandidateKeys": [
+          "jobPreferences.availableFrom",
+          "jobPreferences.expectedLocations",
+          "jobPreferences.expectedPositions"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-220246.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "应聘者声明",
+            "section": "附加信息是否有直系、旁系、姻亲亲属就职中国太平集团或集团关联企业 请选择添加附加信息",
+            "type": "radio",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "jobPreferences.expectedPositions",
+                "score": 0.82,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.availableFrom",
+                "score": 0.82,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.expectedLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          },
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-220246.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "应聘者声明",
+            "section": "附加信息是否有直系、旁系、姻亲亲属就职中国太平集团或集团关联企业 请选择添加附加信息",
+            "type": "radio",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "jobPreferences.expectedPositions",
+                "score": 0.82,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.availableFrom",
+                "score": 0.82,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "jobPreferences.expectedLocations",
+                "score": 0.8,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          }
+        ],
+        "category": "manual_or_no_autofill",
+        "recommendation": "保持人工确认，不建议默认自动填写"
+      },
+      {
+        "signature": "参加面试城市::意向信息::text",
+        "count": 1,
+        "hostnames": [
+          "join.qq.com"
+        ],
+        "files": [
+          "jobpilot-debug-join.qq.com-20260331-175723.json"
+        ],
+        "labels": [
+          "参加面试城市*"
+        ],
+        "sections": [
+          "意向信息"
+        ],
+        "types": [
+          "text"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "experience[].department",
+          "jobPreferences.expectedLocations",
+          "jobPreferences.interviewLocations"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "参加面试城市*",
+            "section": "意向信息",
+            "type": "text",
+            "placeholder": "请输入面试城市",
+            "candidateHints": [
+              {
+                "key": "jobPreferences.interviewLocations",
+                "score": 15.07,
+                "exactAliasHit": true,
+                "sectionBucket": "additional"
+              },
+              {
+                "key": "experience[].department",
+                "score": 3.68,
+                "exactAliasHit": false,
+                "sectionBucket": "experience"
+              },
+              {
+                "key": "jobPreferences.expectedLocations",
+                "score": 1.2,
+                "exactAliasHit": false,
+                "sectionBucket": "additional"
+              }
+            ]
+          }
+        ],
+        "category": "schema_gap",
+        "recommendation": "补 canonical schema 或 customFields 归档规则"
+      },
+      {
+        "signature": "成绩排名::当前教育经历::text",
+        "count": 1,
+        "hostnames": [
+          "join.qq.com"
+        ],
+        "files": [
+          "jobpilot-debug-join.qq.com-20260331-175723.json"
+        ],
+        "labels": [
+          "成绩排名"
+        ],
+        "sections": [
+          "当前教育经历"
+        ],
+        "types": [
+          "text"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "education[].degree",
+          "education[].ranking",
+          "education[].school"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "成绩排名",
+            "section": "当前教育经历",
+            "type": "text",
+            "placeholder": "请选择成绩排名",
+            "candidateHints": [
+              {
+                "key": "education[].ranking",
+                "score": 10.34,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].school",
+                "score": 2.01,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              },
+              {
+                "key": "education[].degree",
+                "score": 1.94,
+                "exactAliasHit": false,
+                "sectionBucket": "education"
+              }
+            ]
+          }
+        ],
+        "category": "detector_or_label_gap",
+        "recommendation": "优先修表单检测和标签提取质量"
+      },
+      {
+        "signature": "出生日期::家庭情况::date",
+        "count": 1,
+        "hostnames": [
+          "cntp.zhiye.com"
+        ],
+        "files": [
+          "jobpilot-debug-cntp.zhiye.com-20260328-220246.json"
+        ],
+        "labels": [
+          "出生日期"
+        ],
+        "sections": [
+          "家庭情况"
+        ],
+        "types": [
+          "date"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "familyMembers[].birthDate",
+          "familyMembers[].employer",
+          "familyMembers[].name"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-cntp.zhiye.com-20260328-220246.json",
+            "hostname": "cntp.zhiye.com",
+            "label": "出生日期",
+            "section": "家庭情况",
+            "type": "date",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "familyMembers[].birthDate",
+                "score": 13.18,
+                "exactAliasHit": true,
+                "sectionBucket": "family"
+              },
+              {
+                "key": "familyMembers[].name",
+                "score": 3.06,
+                "exactAliasHit": false,
+                "sectionBucket": "family"
+              },
+              {
+                "key": "familyMembers[].employer",
+                "score": 2.38,
+                "exactAliasHit": false,
+                "sectionBucket": "family"
+              }
+            ]
+          }
+        ],
+        "category": "detector_or_label_gap",
+        "recommendation": "优先修表单检测和标签提取质量"
+      },
+      {
+        "signature": "大赛等级::大赛经历::search",
+        "count": 1,
+        "hostnames": [
+          "talent.antgroup.com"
+        ],
+        "files": [
+          "jobpilot-debug-talent.antgroup.com-20260331-174545.json"
+        ],
+        "labels": [
+          "大赛等级"
+        ],
+        "sections": [
+          "大赛经历"
+        ],
+        "types": [
+          "search"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "competitions[].description",
+          "competitions[].level",
+          "competitions[].name"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-talent.antgroup.com-20260331-174545.json",
+            "hostname": "talent.antgroup.com",
+            "label": "大赛等级",
+            "section": "大赛经历",
+            "type": "search",
+            "placeholder": "",
+            "candidateHints": [
+              {
+                "key": "competitions[].level",
+                "score": 17.28,
+                "exactAliasHit": true,
+                "sectionBucket": "competitions"
+              },
+              {
+                "key": "competitions[].description",
+                "score": 3.79,
+                "exactAliasHit": false,
+                "sectionBucket": "competitions"
+              },
+              {
+                "key": "competitions[].name",
+                "score": 1.37,
+                "exactAliasHit": false,
+                "sectionBucket": "competitions"
+              }
+            ]
+          }
+        ],
+        "category": "schema_gap",
+        "recommendation": "补 canonical schema 或 customFields 归档规则"
+      },
+      {
+        "signature": "大赛经历::大赛经历::textarea",
+        "count": 1,
+        "hostnames": [
+          "talent.antgroup.com"
+        ],
+        "files": [
+          "jobpilot-debug-talent.antgroup.com-20260331-174545.json"
+        ],
+        "labels": [
+          "大赛经历"
+        ],
+        "sections": [
+          "大赛经历"
+        ],
+        "types": [
+          "textarea"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "competitions[].description",
+          "skills"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-talent.antgroup.com-20260331-174545.json",
+            "hostname": "talent.antgroup.com",
+            "label": "大赛经历",
+            "section": "大赛经历",
+            "type": "textarea",
+            "placeholder": "请输入",
+            "candidateHints": [
+              {
+                "key": "competitions[].description",
+                "score": 18.3,
+                "exactAliasHit": true,
+                "sectionBucket": "competitions"
+              },
+              {
+                "key": "skills",
+                "score": 0.13,
+                "exactAliasHit": false,
+                "sectionBucket": ""
+              }
+            ]
+          }
+        ],
+        "category": "schema_gap",
+        "recommendation": "补 canonical schema 或 customFields 归档规则"
+      },
+      {
+        "signature": "当前所处地::基础信息::text",
+        "count": 1,
+        "hostnames": [
+          "join.qq.com"
+        ],
+        "files": [
+          "jobpilot-debug-join.qq.com-20260331-175723.json"
+        ],
+        "labels": [
+          "当前所处地"
+        ],
+        "sections": [
+          "基础信息"
+        ],
+        "types": [
+          "text"
+        ],
+        "reasons": [
+          "missing_profile_value"
+        ],
+        "topCandidateKeys": [
+          "personal.fullName",
+          "personal.nationality",
+          "residency.currentCity"
+        ],
+        "examples": [
+          {
+            "file": "jobpilot-debug-join.qq.com-20260331-175723.json",
+            "hostname": "join.qq.com",
+            "label": "当前所处地",
+            "section": "基础信息",
+            "type": "text",
+            "placeholder": "请选择当前所处地",
+            "candidateHints": [
+              {
+                "key": "residency.currentCity",
+                "score": 15.01,
+                "exactAliasHit": true,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.nationality",
+                "score": 1.16,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              },
+              {
+                "key": "personal.fullName",
+                "score": 1.13,
+                "exactAliasHit": false,
+                "sectionBucket": "personal"
+              }
+            ]
+          }
+        ],
+        "category": "detector_or_label_gap",
+        "recommendation": "优先修表单检测和标签提取质量"
+      }
+    ]
+  }
+}

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JobPilot Trigger Discovery Fixture</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Microsoft YaHei UI", "PingFang SC", sans-serif;
+      background: #f4efe6;
+      color: #1f2937;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(247, 181, 0, 0.18), transparent 24rem),
+        linear-gradient(180deg, #f8f3ea 0%, #efe6d5 100%);
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+    .hero {
+      margin-bottom: 24px;
+      padding: 24px;
+      border: 1px solid rgba(120, 53, 15, 0.15);
+      border-radius: 24px;
+      background: rgba(255, 251, 235, 0.9);
+      box-shadow: 0 20px 60px rgba(120, 53, 15, 0.08);
+    }
+    .trigger-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .collapse-header,
+    .generic-trigger,
+    .inline-action,
+    .add-award-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+    .collapse-header {
+      background: #f3e8d1;
+      color: #92400e;
+    }
+    .generic-trigger,
+    .add-award-button {
+      background: #1f2937;
+      color: #fff;
+      box-shadow: 0 10px 30px rgba(31, 41, 55, 0.18);
+    }
+    .inline-action {
+      background: transparent;
+      color: #6b7280;
+      text-decoration: underline;
+    }
+    .collapse-header:hover,
+    .generic-trigger:hover,
+    .inline-action:hover,
+    .add-award-button:hover {
+      transform: translateY(-1px);
+    }
+    .applyFormModuleWrapper-windows {
+      padding: 20px;
+      border-radius: 24px;
+      border: 1px solid rgba(31, 41, 55, 0.1);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 18px 48px rgba(31, 41, 55, 0.08);
+    }
+    .applyFormModuleWrapper-title {
+      margin-bottom: 16px;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .award-list {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .apply-form-array-card-content {
+      padding: 16px;
+      border-radius: 18px;
+      background: #fffaf0;
+      border: 1px solid rgba(146, 64, 14, 0.12);
+    }
+    .field-row {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .field-row:last-child {
+      margin-bottom: 0;
+    }
+    label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #7c2d12;
+    }
+    input,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 12px;
+      border: 1px solid #d6d3d1;
+      background: #fff;
+      padding: 10px 12px;
+      font: inherit;
+      color: inherit;
+    }
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+    [hidden] {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>Trigger Discovery Fixture</h1>
+      <p>这个页面故意把 Awards 模块藏在次级触发器后面，用来回归“候选 trigger 枚举 + 排序 + 尝试”链路。</p>
+    </section>
+
+    <div class="trigger-bar">
+      <div class="collapse-header" aria-expanded="false" id="awards-noop-trigger">Awards</div>
+      <button type="button" class="generic-trigger" id="awards-reveal-trigger">Awards</button>
+      <button type="button" class="inline-action" id="other-section-trigger">Projects</button>
+    </div>
+
+    <section class="applyFormModuleWrapper-windows" id="awards-section" hidden>
+      <div class="applyFormModuleWrapper-title">Awards</div>
+      <div class="award-list" id="award-list"></div>
+      <button type="button" class="add-award-button" id="awards-add-button">Add Award</button>
+    </section>
+  </main>
+
+  <script>
+    const noopTrigger = document.getElementById('awards-noop-trigger');
+    const revealTrigger = document.getElementById('awards-reveal-trigger');
+    const otherTrigger = document.getElementById('other-section-trigger');
+    const awardsSection = document.getElementById('awards-section');
+    const awardList = document.getElementById('award-list');
+    const addButton = document.getElementById('awards-add-button');
+
+    noopTrigger.addEventListener('click', () => {
+      document.body.dataset.lastNoopClick = String(Date.now());
+    });
+
+    otherTrigger.addEventListener('click', () => {
+      document.body.dataset.lastOtherClick = String(Date.now());
+    });
+
+    revealTrigger.addEventListener('click', () => {
+      awardsSection.hidden = false;
+      noopTrigger.setAttribute('aria-expanded', 'true');
+      revealTrigger.dataset.revealed = 'true';
+    });
+
+    addButton.addEventListener('click', () => {
+      const index = awardList.children.length;
+      const card = document.createElement('div');
+      card.className = 'apply-form-array-card-content formily-item-award_list';
+      card.innerHTML = `
+        <div class="field-row">
+          <label for="award-name-${index}">奖项名称</label>
+          <input id="award-name-${index}" name="awards[${index}].name" type="text" autocomplete="off">
+        </div>
+        <div class="field-row">
+          <label for="award-year-${index}">获奖年份</label>
+          <input id="award-year-${index}" name="awards[${index}].year" type="text" autocomplete="off">
+        </div>
+        <div class="field-row">
+          <label for="award-description-${index}">奖项描述</label>
+          <textarea id="award-description-${index}" name="awards[${index}].description"></textarea>
+        </div>
+      `;
+      awardList.appendChild(card);
+    });
+  </script>
+</body>
+</html>

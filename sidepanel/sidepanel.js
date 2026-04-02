@@ -7,16 +7,21 @@ import {
   getProfileSnapshots,
   getProfiles,
   getResumeFile,
+  getSemanticFieldMemory,
   getSettings,
   getSiteProfileOverride,
+  getTargetProfileDraft,
   migrateEducationToArray,
   migrateToMultiProfile,
   restoreProfileSnapshot,
+  learnSemanticFieldMemorySamples,
   saveActiveProfileData,
   saveHistoryEntry,
   saveResumeFile,
+  saveSemanticFieldMemory,
   saveSettings,
   saveSiteProfileOverride,
+  saveTargetProfileDraft,
   setActiveProfile,
   clearHistory,
 } from '../lib/storage.js';
@@ -25,6 +30,8 @@ import { loadPdfJs } from '../lib/pdfjs-loader.js';
 import { summarizeFillReport } from '../lib/fill-report.js';
 import { buildAiParsePrompt, extractPdfContent, extractPdfText, getFieldValue, parseLocalRegex, setFieldValue } from '../lib/pdf-parser.js';
 import { createEmptyProfile, mergeProfileWithOverride, normalizeProfile, normalizeSiteKey, setByPath } from '../lib/profile-schema.js';
+import { buildSemanticFieldSample, extractSemanticSamplesFromDebugExport } from '../lib/semantic-field-memory.js';
+import { getTargetDraftDisplayLabel, hasTargetProfileContext, normalizeTargetProfileContext } from '../lib/target-profile.js';
 
 let detectedData = null;
 let allMappings = [];
@@ -43,6 +50,8 @@ const resultsSummary = document.getElementById('resultsSummary');
 const resultsList = document.getElementById('resultsList');
 const emptyHint = document.getElementById('emptyHint');
 const btnFillMain = document.getElementById('btnFillMain');
+const btnGenerateTargetDraft = document.getElementById('btnGenerateTargetDraft');
+const btnClearTargetDraft = document.getElementById('btnClearTargetDraft');
 const btnExportDebug = ensureDebugExportButton();
 const profileForm = document.getElementById('profileForm');
 const profileSelect = document.getElementById('profileSelect');
@@ -50,6 +59,11 @@ const snapshotList = document.getElementById('snapshotList');
 const siteOverrideHost = document.getElementById('siteOverrideHost');
 const siteOverrideEditor = document.getElementById('siteOverrideEditor');
 const siteOverridePreview = document.getElementById('siteOverridePreview');
+const semanticMemoryStatus = document.getElementById('semanticMemoryStatus');
+const targetCompanyInput = document.getElementById('targetCompany');
+const targetRoleInput = document.getElementById('targetRole');
+const targetNotesInput = document.getElementById('targetNotes');
+const targetDraftStatus = document.getElementById('targetDraftStatus');
 
 const LIST_CONFIG = {
   education: {
@@ -72,10 +86,25 @@ const LIST_CONFIG = {
     label: '奖项',
     fields: ['name', 'issuer', 'year', 'description'],
   },
+  competitions: {
+    listId: 'competitionList',
+    label: '竞赛',
+    fields: ['name', 'level', 'award', 'date', 'description'],
+  },
   languages: {
     listId: 'languageList',
     label: '语言',
     fields: ['language', 'proficiency', 'listeningSpeaking', 'readingWriting'],
+  },
+  languageExams: {
+    listId: 'languageExamList',
+    label: 'Language Exam',
+    fields: ['examType', 'score'],
+  },
+  developerLanguages: {
+    listId: 'developerLanguageList',
+    label: '开发语言',
+    fields: ['name', 'level'],
   },
   familyMembers: {
     listId: 'familyList',
@@ -99,7 +128,7 @@ const PDF_PREVIEW_FIELDS = [
   ['经历 1 职位', 'experience[0].title'],
   ['项目 1 名称', 'projects[0].name'],
   ['语言 1', 'languages[0].language'],
-  ['技能', 'skills'],
+  ['����', 'skills'],
 ];
 
 function showToast(message, type = '') {
@@ -126,7 +155,7 @@ function ensureDebugExportButton() {
   button.id = 'btnExportDebug';
   button.type = 'button';
   button.className = 'btn-debug-export';
-  button.textContent = '导出当前页调试 JSON';
+  button.textContent = '导出当前页调�?JSON';
   button.style.display = 'none';
 
   const anchor = document.getElementById('fillDiagnostics');
@@ -249,15 +278,21 @@ async function getActiveTab() {
 
 async function sendToContent(action, data = {}, options) {
   const tab = await getActiveTab();
-  if (!tab) throw new Error('无法获取当前标签页');
+  if (!tab) throw new Error('Cannot access active tab');
   return chrome.tabs.sendMessage(tab.id, { action, ...data }, options);
 }
 
 async function getActiveSiteProfile() {
   const tab = await getActiveTab();
+  const targetContext = normalizeTargetProfileContext({
+    company: targetCompanyInput?.value,
+    role: targetRoleInput?.value,
+    notes: targetNotesInput?.value,
+  });
   const response = await chrome.runtime.sendMessage({
     action: 'getProfile',
     hostname: tab?.url || '',
+    targetKey: targetContext.targetKey,
   });
   return response?.success ? response.data : null;
 }
@@ -268,6 +303,93 @@ async function getCurrentSiteContext() {
     tab,
     hostname: normalizeSiteKey(tab?.url || ''),
   };
+}
+
+function getCurrentTargetContext() {
+  return normalizeTargetProfileContext({
+    company: targetCompanyInput?.value,
+    role: targetRoleInput?.value,
+    notes: targetNotesInput?.value,
+  });
+}
+
+async function renderTargetDraftStatus(message = '') {
+  if (!targetDraftStatus) return;
+
+  const context = getCurrentTargetContext();
+  if (!hasTargetProfileContext(context) || !activeProfileId) {
+    targetDraftStatus.textContent = message || 'δ����Ŀ���λ����ǰʹ��ͨ�����ϡ�';
+    if (btnClearTargetDraft) btnClearTargetDraft.disabled = true;
+    return;
+  }
+
+  const patch = await getTargetProfileDraft(activeProfileId, context.targetKey);
+  const label = getTargetDraftDisplayLabel(context) || context.targetKey;
+  const fieldCount = Object.keys(patch || {}).length;
+
+  if (patch) {
+    targetDraftStatus.innerHTML = `${escapeHtml(label)} �Ѽ��ظ�λ�����ϣ���ǰ���� <strong>${fieldCount}</strong> �������ֶΡ�`;
+  } else {
+    targetDraftStatus.innerHTML = `${escapeHtml(label)} ���޸�λ�����ϣ���ǰ��ʹ��ͨ�����ϡ�`;
+  }
+
+  if (message) {
+    targetDraftStatus.innerHTML += ` ${escapeHtml(message)}`;
+  }
+  if (btnClearTargetDraft) btnClearTargetDraft.disabled = !patch;
+}
+
+async function generateTargetDraft() {
+  const context = getCurrentTargetContext();
+  if (!hasTargetProfileContext(context)) {
+    throw new Error('������дĿ�깫˾���λ');
+  }
+
+  profilesData[activeProfileId].data = formToProfile();
+  await saveActiveProfileData(profilesData[activeProfileId].data, { snapshotReason: 'active_profile_save' });
+
+  const settings = await getSettings();
+  const provider = PROVIDER_PRESETS[settings.provider] || PROVIDER_PRESETS.deepseek;
+  if (!settings.aiEnabled || (!provider.noApiKey && !settings.apiKey)) {
+    throw new Error('请先在设置中启用可用�?AI 模型');
+  }
+
+  setDetectInfo(`正在生成 ${getTargetDraftDisplayLabel(context) || context.targetKey} 的岗位版资料...`, true);
+  const port = chrome.runtime.connect({ name: 'keepalive' });
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'generateTargetProfileDraft',
+      payload: {
+        profileId: activeProfileId,
+        profile: profilesData[activeProfileId].data,
+        jobContext: context,
+      },
+    });
+    if (!response?.success) {
+      throw new Error(response?.error || '��λ����������ʧ��');
+    }
+
+    const fieldCount = Object.keys(response.data?.patch || {}).length;
+    await renderSnapshots();
+    await renderTargetDraftStatus(fieldCount ? `AI �Ѹ��� ${fieldCount} �������ֶΡ�` : 'AI �ж�������⸲���ֶΡ�');
+    if (detectedData) await showFillPreview();
+    showToast(fieldCount ? `��λ�����������ɣ�${fieldCount} ���ֶ�` : '��λ��������ˢ�£�������������', 'success');
+  } finally {
+    restoreDetectInfoSummary();
+    port.disconnect();
+  }
+}
+
+async function clearTargetDraft() {
+  const context = getCurrentTargetContext();
+  if (!hasTargetProfileContext(context)) {
+    throw new Error('������дҪ��յ�Ŀ�깫˾���λ');
+  }
+
+  await saveTargetProfileDraft(activeProfileId, context.targetKey, undefined, { merge: false });
+  await renderSnapshots();
+  await renderTargetDraftStatus('����ոø�λ�����ϡ�');
+  if (detectedData) await showFillPreview();
 }
 
 function buildSiteOverridePreview(baseProfile, overridePatch) {
@@ -293,7 +415,7 @@ function renderSiteOverrideDraftPreview() {
     const baseProfile = normalizeProfile(profilesData[activeProfileId]?.data || {});
     siteOverridePreview.textContent = buildSiteOverridePreview(baseProfile, patch);
   } catch {
-    siteOverridePreview.textContent = 'JSON 无法解析，当前预览不可用。';
+    siteOverridePreview.textContent = 'JSON �޷���������ǰԤ�������á�';
   }
 }
 
@@ -302,9 +424,9 @@ async function renderSiteOverridePanel() {
 
   const { hostname } = await getCurrentSiteContext();
   if (!hostname || !activeProfileId) {
-    siteOverrideHost.textContent = '未识别站点';
+    siteOverrideHost.textContent = 'δʶ��վ��';
     siteOverrideEditor.value = '';
-    siteOverridePreview.textContent = '请先切到一个真实招聘页面，再编辑站点覆盖资料。';
+    siteOverridePreview.textContent = '�����е�һ����ʵ��Ƹҳ�棬�ٱ༭վ�㸲�����ϡ�';
     return;
   }
 
@@ -320,6 +442,14 @@ function setDetectInfo(message, loading = false) {
   detectInfo.innerHTML = loading ? `<span class="spinner-sm"></span> ${message}` : message;
 }
 
+function restoreDetectInfoSummary() {
+  if (detectedData?.totalFields) {
+    setDetectInfo(`检测到 <strong style="color:#2563eb">${detectedData.totalFields}</strong> 个字段`);
+    return;
+  }
+  setDetectInfo('在招聘页面点击“一键填表”，自动填入可用资料并提示缺失项');
+}
+
 function renderDiagnostics(diagnostics, report = null) {
   const missing = diagnostics?.missingRequiredFields?.length || report?.missingRequiredFields?.length || 0;
   const unmapped = diagnostics?.unmappedFields?.length || report?.unmappedFields?.length || 0;
@@ -332,19 +462,13 @@ function renderDiagnostics(diagnostics, report = null) {
     return;
   }
   const parts = [];
-  if (report?.adapterUsed) parts.push(`适配器 <strong>${escapeHtml(report.adapterUsed)}</strong>`);
+  if (report?.adapterUsed) parts.push(`适配�?<strong>${escapeHtml(report.adapterUsed)}</strong>`);
   if (missing) parts.push(`<strong>${missing}</strong> 个必填字段缺资料`);
   if (sensitive) parts.push(`<strong>${sensitive}</strong> 个敏感字段已跳过`);
   if (unmapped) parts.push(`<strong>${unmapped}</strong> 个字段暂未覆盖`);
   if (unmappedValues) parts.push(`<strong>${unmappedValues}</strong> 个值未映射`);
   if (warnings) parts.push(`<strong>${warnings}</strong> 个站点告警`);
-  fillDiagnostics.innerHTML = parts.join(' 路 ');
-  fillDiagnostics.style.display = 'block';
-  return;
-  if (missing) parts.push(`<strong>${missing}</strong> 个必填字段资料缺失`);
-  if (sensitive) parts.push(`<strong>${sensitive}</strong> 个敏感字段已跳过`);
-  if (unmapped) parts.push(`<strong>${unmapped}</strong> 个字段暂未覆盖`);
-  fillDiagnostics.innerHTML = parts.join(' · ');
+  fillDiagnostics.innerHTML = parts.join(' �?');
   fillDiagnostics.style.display = 'block';
 }
 
@@ -358,7 +482,7 @@ async function detectForms() {
   emptyHint.style.display = 'none';
   btnFillMain.disabled = true;
   btnExportDebug.style.display = 'none';
-  setDetectInfo('正在检测表单...', true);
+  setDetectInfo('正在检测表�?..', true);
 
   try {
     const tab = await getActiveTab();
@@ -403,28 +527,21 @@ async function showFillPreview() {
       }));
     const previewProfileName = profilesData[activeProfileId]?.name || 'default';
     const previewParts = [`资料 <strong>${escapeHtml(previewProfileName)}</strong>`, `规则命中 <strong>${matched.length}</strong> 项`];
+    const targetContext = getCurrentTargetContext();
+    if (hasTargetProfileContext(targetContext)) {
+      previewParts.push(`岗位�?<strong>${escapeHtml(getTargetDraftDisplayLabel(targetContext) || targetContext.targetKey)}</strong>`);
+    }
     if (aiCandidates.length) {
       previewParts.push(
         (settings.aiEnabled && (provider.noApiKey || settings.apiKey))
-          ? `AI 候选 <strong>${aiCandidates.length}</strong> 项`
-          : `未匹配 <strong>${aiCandidates.length}</strong> 项`
+          ? `AI 候�?<strong>${aiCandidates.length}</strong> 项`
+          : `未匹�?<strong>${aiCandidates.length}</strong> 项`
       );
     }
     if (diagnostics?.unmappedValues?.length) {
       previewParts.push(`值未映射 <strong>${diagnostics.unmappedValues.length}</strong> 项`);
     }
-    fillPreview.innerHTML = previewParts.join(' 路 ');
-    fillPreview.style.display = 'block';
-    renderDiagnostics(diagnostics);
-    return;
-    const profileName = profilesData[activeProfileId]?.name || '默认资料';
-    let summary = `资料 <strong>${escapeHtml(profileName)}</strong> · 正则命中 <strong>${matched.length}</strong> 项`;
-    if (aiCandidates.length) {
-      summary += (settings.aiEnabled && (provider.noApiKey || settings.apiKey))
-        ? ` · AI 兜底 <strong>${aiCandidates.length}</strong> 项`
-        : ` · 未匹配 <strong>${aiCandidates.length}</strong> 项`;
-    }
-    fillPreview.innerHTML = summary;
+    fillPreview.innerHTML = previewParts.join(' �?');
     fillPreview.style.display = 'block';
     renderDiagnostics(diagnostics);
   } catch {}
@@ -472,7 +589,7 @@ async function runFill() {
   if (!detectedData) return;
   fillInProgress = true;
   btnFillMain.disabled = true;
-  btnFillMain.textContent = '填表中...';
+  btnFillMain.textContent = '填表�?..';
 
   try {
     const profile = await getActiveSiteProfile();
@@ -490,7 +607,7 @@ async function runFill() {
     const aiCandidates = unmatched.filter(item => item.field.type !== 'file');
     let aiMeta = null;
     if (aiCandidates.length && settings.aiEnabled && (provider.noApiKey || settings.apiKey)) {
-      setDetectInfo(`AI 正在补充 ${aiCandidates.length} 个字段...`, true);
+      setDetectInfo(`AI 正在补充 ${aiCandidates.length} 个字�?..`, true);
       const port = chrome.runtime.connect({ name: 'keepalive' });
       try {
         const aiResponse = await chrome.runtime.sendMessage({
@@ -544,17 +661,101 @@ async function runFill() {
       fillReport: fillResponse.data.report,
       leanMappings: allMappings.filter(item => item.value && !item.isFile),
     });
+    await learnFromSuccessfulFill(tab, fillResponse.data.results);
 
     setDetectInfo(`检测到 <strong style="color:#2563eb">${detectedData.totalFields}</strong> 个字段`);
-    showToast(`填表完成：${fillResponse.data.summary.filled} 项成功`, 'success');
+    showToast(`填表完成�?{fillResponse.data.summary.filled} 项成功`, 'success');
   } catch (error) {
     setDetectInfo(`检测到 <strong style="color:#2563eb">${detectedData?.totalFields || 0}</strong> 个字段`);
     showToast(error.message, 'error');
   } finally {
     fillInProgress = false;
     btnFillMain.disabled = false;
-    btnFillMain.textContent = '一键填表';
+    btnFillMain.textContent = 'һ�����';
   }
+}
+
+async function learnFromSuccessfulFill(tab, fillResults = []) {
+  if (!Array.isArray(fillResults) || !fillResults.length) return;
+
+  const hostname = (() => {
+    try {
+      return new URL(tab?.url || '').hostname || '';
+    } catch {
+      return '';
+    }
+  })();
+
+  const successfulMappings = fillResults
+    .filter(result => result?.status === 'filled')
+    .map(result => allMappings.find(mapping => mapping.field?.id === result.fieldId))
+    .filter(mapping => mapping && mapping.key && mapping.source === 'regex' && !mapping.isFile);
+
+  if (!successfulMappings.length) return;
+
+  const samples = successfulMappings
+    .map(mapping => buildSemanticFieldSample(mapping.field, mapping.key, {
+      hostname,
+      source: mapping.matchMethod || mapping.source || 'regex',
+    }))
+    .filter(Boolean);
+
+  if (!samples.length) return;
+  await learnSemanticFieldMemorySamples(samples);
+  await renderSemanticMemoryStatus();
+}
+
+async function renderSemanticMemoryStatus(extraText = '') {
+  if (!semanticMemoryStatus) return;
+  const memory = await getSemanticFieldMemory();
+  const hostCount = new Set(memory.map(entry => entry.hostname).filter(Boolean)).size;
+  semanticMemoryStatus.textContent = `��ѧϰ ${memory.length} ���ֶ����������� ${hostCount} ��վ��${extraText ? ` �� ${extraText}` : ''}`;
+}
+
+async function importSemanticDebugFiles(files = []) {
+  const fileList = Array.from(files || []).filter(Boolean);
+  if (!fileList.length) return;
+
+  const beforeMemory = await getSemanticFieldMemory();
+  const samples = [];
+  let parsedFiles = 0;
+  let failedFiles = 0;
+  let matchedLearned = 0;
+  let unmatchedLearned = 0;
+
+  for (const file of fileList) {
+    try {
+      const payload = JSON.parse(await file.text());
+      const extracted = extractSemanticSamplesFromDebugExport(payload);
+      if (!extracted.samples.length) {
+        failedFiles += 1;
+        continue;
+      }
+      samples.push(...extracted.samples);
+      matchedLearned += extracted.stats.matchedLearned;
+      unmatchedLearned += extracted.stats.unmatchedLearned;
+      parsedFiles += 1;
+    } catch (error) {
+      console.warn('[JobPilot] debug JSON import skipped:', file.name, error.message);
+      failedFiles += 1;
+    }
+  }
+
+  if (!samples.length) {
+    await renderSemanticMemoryStatus();
+    throw new Error('û�д���ѡ Debug JSON ����ȡ����ѧϰ����');
+  }
+
+  const afterMemory = await learnSemanticFieldMemorySamples(samples);
+  const delta = Math.max(0, afterMemory.length - beforeMemory.length);
+  await renderSemanticMemoryStatus(`本次新增 ${delta} 条`);
+
+  const summary = `已处�?${parsedFiles}/${fileList.length} 个文件，学习 ${samples.length} 条样本（命中 ${matchedLearned}，缺�?${unmatchedLearned}）`;
+  if (failedFiles) {
+    showToast(`${summary}，跳�?${failedFiles} 个无效文件`, 'success');
+    return;
+  }
+  showToast(summary, 'success');
 }
 
 async function renderResults(results, summary, report, aiMeta, confidenceThreshold) {
@@ -574,8 +775,8 @@ async function renderResults(results, summary, report, aiMeta, confidenceThresho
     };
   });
 
-  let summaryHtml = `成功 <strong>${summary.filled}</strong> 项 · 跳过 ${summary.skipped} 项`;
-  if (summary.errors) summaryHtml += ` · <span style="color:var(--red)">失败 ${summary.errors} 项</span>`;
+  let summaryHtml = `成功 <strong>${summary.filled}</strong> �?· 跳过 ${summary.skipped} 项`;
+  if (summary.errors) summaryHtml += ` · <span style="color:var(--red)">失败 ${summary.errors} �?/span>`;
   if (aiMeta?.usage) {
     const tokens = (aiMeta.usage.promptTokens || 0) + (aiMeta.usage.completionTokens || 0);
     summaryHtml += ` · AI ${escapeHtml(aiMeta.model || '')} (${tokens} tokens)`;
@@ -583,14 +784,18 @@ async function renderResults(results, summary, report, aiMeta, confidenceThresho
   resultsSummary.innerHTML = summaryHtml;
   const reportSummary = summarizeFillReport(report || {});
   const reportBits = [`成功 <strong>${summary.filled}</strong> 项`, `跳过 ${summary.skipped} 项`];
-  if (summary.errors) reportBits.push(`<span style="color:var(--red)">失败 ${summary.errors} 项</span>`);
+  const targetContext = getCurrentTargetContext();
+  if (hasTargetProfileContext(targetContext)) {
+    reportBits.push(`岗位�?${escapeHtml(getTargetDraftDisplayLabel(targetContext) || targetContext.targetKey)}`);
+  }
+  if (summary.errors) reportBits.push(`<span style="color:var(--red)">失败 ${summary.errors} �?/span>`);
   if (reportSummary.unmappedValueCount) reportBits.push(`值未映射 ${reportSummary.unmappedValueCount}`);
   if (reportSummary.warningCount) reportBits.push(`告警 ${reportSummary.warningCount}`);
   if (aiMeta?.usage) {
     const tokens = (aiMeta.usage.promptTokens || 0) + (aiMeta.usage.completionTokens || 0);
     reportBits.push(`AI ${escapeHtml(aiMeta.model || '')} (${tokens} tokens)`);
   }
-  resultsSummary.innerHTML = reportBits.join(' 路 ');
+  resultsSummary.innerHTML = reportBits.join(' �?');
   resultsList.innerHTML = '';
 
   for (const item of enriched) {
@@ -599,7 +804,7 @@ async function renderResults(results, summary, report, aiMeta, confidenceThresho
     li.className = `result-item ${item.status === 'filled' ? (low ? 'ai-low' : item.source === 'ai' ? 'ai' : 'filled') : item.status}`;
     li.dataset.fieldId = item.fieldId;
     li.innerHTML = `
-      <span class="result-icon">${item.status === 'filled' ? '✓' : item.status === 'skipped' ? '○' : '×'}</span>
+      <span class="result-icon">${item.status === 'filled' ? '?' : item.status === 'skipped' ? '��' : '��'}</span>
       <div class="result-body">
         <div class="result-top">
           <span class="result-label">${escapeHtml(item.label)}</span>
@@ -634,11 +839,14 @@ function readCards(listId, fields) {
     .map(card => {
       const result = {};
       fields.forEach(field => {
-        result[field] = card.querySelector(`[data-field="${field}"]`)?.value?.trim?.() || '';
+        setFieldValue(result, field, card.querySelector(`[data-field="${field}"]`)?.value?.trim?.() || '');
       });
       return result;
     })
-    .filter(item => Object.values(item).some(Boolean));
+    .filter(item => fields.some(field => {
+      const value = getFieldValue(item, field);
+      return Array.isArray(value) ? value.length > 0 : Boolean(value);
+    }));
 }
 
 function createCardShell(innerHtml) {
@@ -648,8 +856,8 @@ function createCardShell(innerHtml) {
     <div class="entry-card-header">
       <span class="entry-card-label"></span>
       <div class="entry-card-btns">
-        <button type="button" class="btn-icon btn-card-up" title="上移">↑</button>
-        <button type="button" class="btn-icon btn-card-down" title="下移">↓</button>
+        <button type="button" class="btn-icon btn-card-up" title="上移">�?/button>
+        <button type="button" class="btn-icon btn-card-down" title="下移">�?/button>
         <button type="button" class="btn-icon btn-icon-danger btn-card-del" title="删除">×</button>
       </div>
     </div>
@@ -685,7 +893,7 @@ function createExperienceCard(entry = {}) {
       <div><label>地点</label><input type="text" data-field="location" value="${escapeAttr(entry.location)}"></div>
     </div>
     <div class="form-row two-col">
-      <div><label>开始时间</label><input type="month" data-field="startDate" value="${escapeAttr(entry.startDate)}"></div>
+      <div><label>开始时�?/label><input type="month" data-field="startDate" value="${escapeAttr(entry.startDate)}"></div>
       <div><label>结束时间</label><input type="month" data-field="endDate" value="${escapeAttr(entry.endDate)}"></div>
     </div>
     <div class="form-row"><label>工作描述</label><textarea data-field="description" rows="3">${escapeHtml(entry.description)}</textarea></div>
@@ -699,7 +907,7 @@ function createProjectCard(entry = {}) {
       <div><label>项目角色</label><input type="text" data-field="role" value="${escapeAttr(entry.role)}"></div>
     </div>
     <div class="form-row two-col">
-      <div><label>开始时间</label><input type="month" data-field="startDate" value="${escapeAttr(entry.startDate)}"></div>
+      <div><label>开始时�?/label><input type="month" data-field="startDate" value="${escapeAttr(entry.startDate)}"></div>
       <div><label>结束时间</label><input type="month" data-field="endDate" value="${escapeAttr(entry.endDate)}"></div>
     </div>
     <div class="form-row"><label>项目描述</label><textarea data-field="description" rows="3">${escapeHtml(entry.description)}</textarea></div>
@@ -716,7 +924,21 @@ function createAwardCard(entry = {}) {
     <div class="form-row"><label>备注</label><input type="text" data-field="description" value="${escapeAttr(entry.description)}"></div>`);
 }
 
+function createCompetitionCard(entry = {}) {
+  return createCardShell(`
+    <div class="form-row two-col">
+      <div><label>竞赛名称</label><input type="text" data-field="name" value="${escapeAttr(entry.name)}"></div>
+      <div><label>等级</label><input type="text" data-field="level" value="${escapeAttr(entry.level)}"></div>
+    </div>
+    <div class="form-row two-col">
+      <div><label>获奖 / 荣誉</label><input type="text" data-field="award" value="${escapeAttr(entry.award)}"></div>
+      <div><label>时间</label><input type="month" data-field="date" value="${escapeAttr(entry.date)}"></div>
+    </div>
+    <div class="form-row"><label>经历描述</label><textarea data-field="description" rows="3">${escapeHtml(entry.description)}</textarea></div>`);
+}
+
 function createLanguageCard(entry = {}) {
+  const certType = getFieldValue(entry, 'customFields.certType') || '';
   return createCardShell(`
     <div class="form-row two-col">
       <div><label>语言</label><input type="text" data-field="language" value="${escapeAttr(entry.language || entry.name)}"></div>
@@ -725,6 +947,54 @@ function createLanguageCard(entry = {}) {
     <div class="form-row two-col">
       <div><label>听说</label><input type="text" data-field="listeningSpeaking" value="${escapeAttr(entry.listeningSpeaking)}"></div>
       <div><label>读写</label><input type="text" data-field="readingWriting" value="${escapeAttr(entry.readingWriting)}"></div>
+    </div>`);
+}
+
+function createLanguageCardEnhanced(entry = {}) {
+  const certType = getFieldValue(entry, 'customFields.certType') || '';
+  return createCardShell(`
+    <div class="form-row two-col">
+      <div><label>语言</label><input type="text" data-field="language" value="${escapeAttr(entry.language || entry.name)}"></div>
+      <div><label>掌握程度</label><input type="text" data-field="proficiency" value="${escapeAttr(entry.proficiency || entry.level)}"></div>
+    </div>
+    <div class="form-row"><label>外语考试 / 等级</label><input type="text" data-field="customFields.certType" value="${escapeAttr(certType)}" placeholder="CET-6 / IELTS 7.5 / TEM-8"></div>
+    <div class="form-row two-col">
+      <div><label>听说</label><input type="text" data-field="listeningSpeaking" value="${escapeAttr(entry.listeningSpeaking)}"></div>
+      <div><label>读写</label><input type="text" data-field="readingWriting" value="${escapeAttr(entry.readingWriting)}"></div>
+    </div>`);
+}
+
+function createLanguageExamCard(entry = {}) {
+  const examType = entry.examType || '';
+  const examOptions = [
+    '',
+    'CET-4',
+    'CET-6',
+    'TOEFL',
+    'GRE',
+    'GMAT',
+    'IELTS',
+    'TEM',
+    'SAT',
+    'ACT',
+    'CERF',
+  ];
+  const optionsHtml = examOptions
+    .map(option => `<option value="${escapeAttr(option)}"${option === examType ? ' selected' : ''}>${escapeHtml(option || 'Select Exam')}</option>`)
+    .join('');
+
+  return createCardShell(`
+    <div class="form-row two-col">
+      <div><label>Exam Type</label><select data-field="examType">${optionsHtml}</select></div>
+      <div><label>Score / Level</label><input type="text" data-field="score" value="${escapeAttr(entry.score)}" placeholder="520 / 7.5 / B2"></div>
+    </div>`);
+}
+
+function createDeveloperLanguageCard(entry = {}) {
+  return createCardShell(`
+    <div class="form-row two-col">
+      <div><label>开发语言</label><input type="text" data-field="name" value="${escapeAttr(entry.name || entry.language)}"></div>
+      <div><label>掌握程度</label><input type="text" data-field="level" value="${escapeAttr(entry.level || entry.proficiency)}"></div>
     </div>`);
 }
 
@@ -743,7 +1013,7 @@ function createFamilyCard(entry = {}) {
       <div><label>职务</label><input type="text" data-field="jobTitle" value="${escapeAttr(entry.jobTitle)}"></div>
     </div>
     <div class="form-row two-col">
-      <div><label>状态</label><input type="text" data-field="status" value="${escapeAttr(entry.status)}"></div>
+      <div><label>状�?/label><input type="text" data-field="status" value="${escapeAttr(entry.status)}"></div>
       <div><label>所在地</label><input type="text" data-field="location" value="${escapeAttr(entry.location)}"></div>
     </div>`);
 }
@@ -752,7 +1022,10 @@ LIST_CONFIG.education.createCard = createEducationCard;
 LIST_CONFIG.experience.createCard = createExperienceCard;
 LIST_CONFIG.projects.createCard = createProjectCard;
 LIST_CONFIG.awards.createCard = createAwardCard;
+LIST_CONFIG.competitions.createCard = createCompetitionCard;
 LIST_CONFIG.languages.createCard = createLanguageCard;
+LIST_CONFIG.languageExams.createCard = createLanguageExamCard;
+LIST_CONFIG.developerLanguages.createCard = createDeveloperLanguageCard;
 LIST_CONFIG.familyMembers.createCard = createFamilyCard;
 
 function bindCardList(listId, label) {
@@ -763,7 +1036,7 @@ function bindCardList(listId, label) {
     const cards = [...list.querySelectorAll('.entry-card')];
     const index = cards.indexOf(card);
     if (event.target.closest('.btn-card-del')) {
-      if (cards.length <= 1) return showToast('至少保留一条记录', 'error');
+      if (cards.length <= 1) return showToast('���ٱ���һ����¼', 'error');
       card.remove();
     } else if (event.target.closest('.btn-card-up') && index > 0) {
       list.insertBefore(card, cards[index - 1]);
@@ -814,6 +1087,7 @@ function formToProfile() {
   setByPath(profile, 'contact.email', get('email'));
   setByPath(profile, 'contact.address', get('address'));
   setByPath(profile, 'contact.wechat', get('wechat'));
+  setByPath(profile, 'contact.qq', get('qq'));
   setByPath(profile, 'contact.landline', get('contact.landline'));
   setByPath(profile, 'contact.postalCode', get('contact.postalCode'));
   setByPath(profile, 'contact.emergencyContactName', get('contact.emergencyContactName'));
@@ -830,6 +1104,11 @@ function formToProfile() {
   setByPath(profile, 'jobPreferences.expectedSalary', get('jobPreferences.expectedSalary'));
   setByPath(profile, 'jobPreferences.internshipDuration', get('jobPreferences.internshipDuration'));
   setByPath(profile, 'jobPreferences.jobStatus', get('jobPreferences.jobStatus'));
+  setByPath(
+    profile,
+    'jobPreferences.interviewLocations',
+    get('jobPreferences.interviewLocations').split(/[,，、]/).map(item => item.trim()).filter(Boolean)
+  );
   Object.entries(LIST_CONFIG).forEach(([key, config]) => setByPath(profile, key, readCards(config.listId, config.fields)));
   setByPath(profile, 'skills', get('skills').split(/[,，、]/).map(item => item.trim()).filter(Boolean));
   setByPath(profile, 'links.github', get('links.github'));
@@ -874,6 +1153,7 @@ function profileToForm(profile) {
   set('email', normalized.contact.email);
   set('address', normalized.contact.address);
   set('wechat', normalized.contact.wechat);
+  set('qq', normalized.contact.qq);
   set('contact.landline', normalized.contact.landline);
   set('contact.postalCode', normalized.contact.postalCode);
   set('contact.emergencyContactName', normalized.contact.emergencyContactName);
@@ -885,6 +1165,7 @@ function profileToForm(profile) {
   set('residency.householdAddress', normalized.residency.householdAddress);
   set('residency.policeStation', normalized.residency.policeStation);
   set('jobPreferences.expectedCity', normalized.jobPreferences.expectedLocations.join(', '));
+  set('jobPreferences.interviewLocations', normalized.jobPreferences.interviewLocations.join(', '));
   set('jobPreferences.expectedPositions', normalized.jobPreferences.expectedPositions.join(', '));
   set('jobPreferences.availableFrom', normalized.jobPreferences.availableFrom);
   set('jobPreferences.expectedSalary', normalized.jobPreferences.expectedSalary);
@@ -910,6 +1191,7 @@ async function loadProfiles() {
     .join('');
   profileToForm(profilesData[activeProfileId]?.data || createEmptyProfile());
   await renderSiteOverridePanel();
+  await renderTargetDraftStatus();
 }
 
 async function renderHistory() {
@@ -928,7 +1210,7 @@ async function renderHistory() {
         <div class="history-item-url">${escapeHtml(item.url || '')}</div>
         <div class="history-item-meta">
           <span>${timeText}</span>
-          <span class="history-stat ok">✓ ${item.successCount || 0}</span>
+          <span class="history-stat ok">�?${item.successCount || 0}</span>
           ${item.failCount ? `<span class="history-stat err">× ${item.failCount}</span>` : ''}
           ${item.leanMappings?.length ? `<button class="btn-sm btn-replay-history" data-ts="${item.timestamp}" style="margin-left:auto">回填</button>` : ''}
         </div>
@@ -945,19 +1227,25 @@ function formatSnapshotTime(value) {
 
 function formatSnapshotReason(reason) {
   return {
-    active_profile_save: '保存资料前',
-    profile_create: '新建资料前',
-    profile_duplicate: '复制资料前',
-    profile_delete: '删除资料前',
+    active_profile_save: '��������ǰ',
+    profile_create: '�½�����ǰ',
+    profile_duplicate: '��������ǰ',
+    profile_delete: 'ɾ������ǰ',
     profile_rename: '重命名前',
-    site_profile_override_save: '站点资料更新前',
-    site_profile_override_delete: '站点资料删除前',
-    snapshot_restore_backup: '恢复前自动备份',
-  }[reason] || reason || '资料变更前';
+    site_profile_override_save: 'վ�����ϸ���ǰ',
+    site_profile_override_delete: 'վ������ɾ��ǰ',
+    target_profile_draft_save: '岗位版资料更新前',
+    target_profile_draft_delete: '岗位版资料删除前',
+    snapshot_restore_backup: '�ָ�ǰ�Զ�����',
+  }[reason] || reason || '���ϱ��ǰ';
 }
 
 function countSnapshotSiteOverrides(siteOverrides = {}) {
   return Object.values(siteOverrides || {}).reduce((total, entries) => total + Object.keys(entries || {}).length, 0);
+}
+
+function countSnapshotTargetDrafts(targetDrafts = {}) {
+  return Object.values(targetDrafts || {}).reduce((total, entries) => total + Object.keys(entries || {}).length, 0);
 }
 
 async function renderSnapshots() {
@@ -971,6 +1259,7 @@ async function renderSnapshots() {
   snapshotList.innerHTML = snapshots.map(snapshot => {
     const profileCount = Object.keys(snapshot.profiles || {}).length;
     const siteOverrideCount = countSnapshotSiteOverrides(snapshot.siteOverrides);
+    const targetDraftCount = countSnapshotTargetDrafts(snapshot.targetDrafts);
     const activeProfileName = snapshot.profiles?.[snapshot.activeProfileId]?.name || snapshot.activeProfileId || 'default';
 
     return `
@@ -982,8 +1271,9 @@ async function renderSnapshots() {
         <div class="snapshot-item-meta">
           <span>${escapeHtml(formatSnapshotReason(snapshot.reason))}</span>
           <span>模板 ${escapeHtml(activeProfileName)}</span>
-          <span>${profileCount} 份资料</span>
-          ${siteOverrideCount ? `<span>${siteOverrideCount} 个站点覆盖</span>` : ''}
+          <span>${profileCount} 份资�?/span>
+          ${siteOverrideCount ? `<span>${siteOverrideCount} 个站点覆�?/span>` : ''}
+          ${targetDraftCount ? `<span>${targetDraftCount} 个岗位版</span>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -1017,7 +1307,7 @@ function renderPdfPreview(profile) {
       <div class="pdf-field-info">
         <div class="pdf-field-label">${escapeHtml(label)}</div>
         <div class="pdf-field-values">
-          ${currentValue ? `<span class="pdf-current-val">${escapeHtml(String(currentValue))}</span><span class="pdf-arrow">→</span>` : ''}
+          ${currentValue ? `<span class="pdf-current-val">${escapeHtml(String(currentValue))}</span><span class="pdf-arrow">�?/span>` : ''}
           <span class="pdf-new-val">${escapeHtml(String(nextValue))}</span>
         </div>
       </div>`;
@@ -1025,7 +1315,7 @@ function renderPdfPreview(profile) {
   }
 
   if (!list.children.length) {
-    list.innerHTML = '<p class="history-empty">未从 PDF 中提取到可导入字段</p>';
+    list.innerHTML = '<p class="history-empty">未从 PDF 中提取到可导入字�?/p>';
   }
   showPdfStep('preview');
 }
@@ -1046,9 +1336,9 @@ async function handlePdfParse(mode) {
     const settings = await getSettings();
     const provider = PROVIDER_PRESETS[settings.provider] || PROVIDER_PRESETS.deepseek;
     if (!settings.aiEnabled || (!provider.noApiKey && !settings.apiKey)) {
-      throw new Error('请先配置可用的 AI 模型');
+      throw new Error('请先配置可用�?AI 模型');
     }
-    document.getElementById('pdfLoadingText').textContent = '正在用 AI 解析简历...';
+    document.getElementById('pdfLoadingText').textContent = '正在�?AI 解析简�?..';
     const pdfjs = await loadPdfJs();
     const text = await extractPdfText(currentPdfFile, pdfjs);
     const ai = new AIProvider(settings);
@@ -1080,6 +1370,32 @@ function bindEvents() {
   document.getElementById('btnDetect').addEventListener('click', detectForms);
   btnExportDebug.addEventListener('click', exportDebugSnapshot);
   btnFillMain.addEventListener('click', runFill);
+  btnGenerateTargetDraft?.addEventListener('click', async () => {
+    try {
+      await generateTargetDraft();
+    } catch (error) {
+      showToast(error.message, 'error');
+      await renderTargetDraftStatus();
+    }
+  });
+  btnClearTargetDraft?.addEventListener('click', async () => {
+    try {
+      await clearTargetDraft();
+      showToast('岗位版资料已清空', 'success');
+    } catch (error) {
+      showToast(error.message, 'error');
+      await renderTargetDraftStatus();
+    }
+  });
+  [targetCompanyInput, targetRoleInput, targetNotesInput].forEach(input => {
+    input?.addEventListener('input', () => {
+      renderTargetDraftStatus().catch(() => {});
+    });
+    input?.addEventListener('change', async () => {
+      await renderTargetDraftStatus();
+      if (detectedData) await showFillPreview();
+    });
+  });
   document.getElementById('btnRefill').addEventListener('click', async () => {
     fillResults.style.display = 'none';
     await showFillPreview();
@@ -1090,16 +1406,18 @@ function bindEvents() {
     activeProfileId = profileSelect.value;
     profileToForm(profilesData[activeProfileId]?.data || createEmptyProfile());
     await renderSiteOverridePanel();
+    await renderTargetDraftStatus();
     if (detectedData) await showFillPreview();
   });
 
   document.getElementById('btnNewProfile').addEventListener('click', async () => {
-    const name = prompt('新模板名称', '新建资料');
+    const name = prompt('��ģ������', '�½�����');
     if (!name?.trim()) return;
     activeProfileId = await createProfile(name.trim());
     await loadProfiles();
     await renderSnapshots();
     await renderSiteOverridePanel();
+    await renderTargetDraftStatus();
   });
 
   document.getElementById('btnDuplicateProfile').addEventListener('click', async () => {
@@ -1109,28 +1427,36 @@ function bindEvents() {
     await loadProfiles();
     await renderSnapshots();
     await renderSiteOverridePanel();
+    await renderTargetDraftStatus();
   });
 
   document.getElementById('btnDeleteProfile').addEventListener('click', async () => {
-    if (!confirm('确认删除当前资料模板？')) return;
+    if (!confirm('ȷ��ɾ����ǰ����ģ�壿')) return;
     await deleteProfile(activeProfileId);
     await loadProfiles();
     await renderSnapshots();
     await renderSiteOverridePanel();
+    await renderTargetDraftStatus();
   });
 
   bindCardList(LIST_CONFIG.education.listId, LIST_CONFIG.education.label);
   bindCardList(LIST_CONFIG.experience.listId, LIST_CONFIG.experience.label);
   bindCardList(LIST_CONFIG.projects.listId, LIST_CONFIG.projects.label);
   bindCardList(LIST_CONFIG.awards.listId, LIST_CONFIG.awards.label);
+  bindCardList(LIST_CONFIG.competitions.listId, LIST_CONFIG.competitions.label);
   bindCardList(LIST_CONFIG.languages.listId, LIST_CONFIG.languages.label);
+  bindCardList(LIST_CONFIG.languageExams.listId, LIST_CONFIG.languageExams.label);
+  bindCardList(LIST_CONFIG.developerLanguages.listId, LIST_CONFIG.developerLanguages.label);
   bindCardList(LIST_CONFIG.familyMembers.listId, LIST_CONFIG.familyMembers.label);
 
   document.getElementById('btnAddEducation').addEventListener('click', () => renderCards('educationList', [...readCards('educationList', LIST_CONFIG.education.fields), {}], createEducationCard, '教育经历'));
   document.getElementById('btnAddExperience').addEventListener('click', () => renderCards('experienceList', [...readCards('experienceList', LIST_CONFIG.experience.fields), {}], createExperienceCard, '工作经历'));
   document.getElementById('btnAddProject').addEventListener('click', () => renderCards('projectList', [...readCards('projectList', LIST_CONFIG.projects.fields), {}], createProjectCard, '项目经历'));
   document.getElementById('btnAddAward').addEventListener('click', () => renderCards('awardList', [...readCards('awardList', LIST_CONFIG.awards.fields), {}], createAwardCard, '奖项'));
-  document.getElementById('btnAddLanguage').addEventListener('click', () => renderCards('languageList', [...readCards('languageList', LIST_CONFIG.languages.fields), {}], createLanguageCard, '语言'));
+  document.getElementById('btnAddCompetition').addEventListener('click', () => renderCards('competitionList', [...readCards('competitionList', LIST_CONFIG.competitions.fields), {}], createCompetitionCard, '竞赛'));
+  document.getElementById('btnAddLanguage').addEventListener('click', () => renderCards('languageList', [...readCards('languageList', LIST_CONFIG.languages.fields), {}], LIST_CONFIG.languages.createCard, '语言'));
+  document.getElementById('btnAddLanguageExam').addEventListener('click', () => renderCards('languageExamList', [...readCards('languageExamList', LIST_CONFIG.languageExams.fields), {}], LIST_CONFIG.languageExams.createCard, '语言考试'));
+  document.getElementById('btnAddDeveloperLanguage').addEventListener('click', () => renderCards('developerLanguageList', [...readCards('developerLanguageList', LIST_CONFIG.developerLanguages.fields), {}], createDeveloperLanguageCard, '开发语言'));
   document.getElementById('btnAddFamily').addEventListener('click', () => renderCards('familyList', [...readCards('familyList', LIST_CONFIG.familyMembers.fields), {}], createFamilyCard, '家庭成员'));
 
   profileForm.addEventListener('submit', async event => {
@@ -1140,7 +1466,8 @@ function bindEvents() {
     await saveActiveProfileData(profile);
     await renderSnapshots();
     await renderSiteOverridePanel();
-    showToast('资料已保存', 'success');
+    await renderTargetDraftStatus();
+    showToast('�����ѱ���', 'success');
     if (detectedData) await showFillPreview();
   });
 
@@ -1154,7 +1481,22 @@ function bindEvents() {
     await saveActiveProfileData(profile);
     await renderSnapshots();
     await renderSiteOverridePanel();
+    await renderTargetDraftStatus();
     event.target.value = '';
+  });
+
+  document.getElementById('btnImportSemanticDebug').addEventListener('click', () => {
+    document.getElementById('semanticDebugInput').click();
+  });
+  document.getElementById('semanticDebugInput').addEventListener('change', async event => {
+    const files = Array.from(event.target.files || []);
+    try {
+      await importSemanticDebugFiles(files);
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      event.target.value = '';
+    }
   });
 
   document.getElementById('btnExportProfile').addEventListener('click', async () => {
@@ -1206,6 +1548,7 @@ function bindEvents() {
     await saveActiveProfileData(profilesData[activeProfileId].data);
     await renderSnapshots();
     await renderSiteOverridePanel();
+    await renderTargetDraftStatus();
     profileToForm(profilesData[activeProfileId].data);
     closePdfModal();
   });
@@ -1234,7 +1577,7 @@ function bindEvents() {
     const resultEl = document.getElementById('testResult');
     try {
       if (providerSelect.value === 'ollama' && !(await checkOllamaRunning())) {
-        throw new Error('Ollama 未运行');
+        throw new Error('Ollama δ����');
       }
       const ai = new AIProvider({
         provider: providerSelect.value,
@@ -1260,7 +1603,7 @@ function bindEvents() {
       aiEnabled: document.getElementById('aiEnabled').checked,
       confidenceThreshold: Number(confidenceSlider.value),
     });
-    showToast('设置已保存', 'success');
+    showToast('�����ѱ���', 'success');
     if (detectedData) await showFillPreview();
   });
 
@@ -1268,99 +1611,12 @@ function bindEvents() {
     renderSiteOverrideDraftPreview();
   });
 
-  document.getElementById('btnReloadSiteOverride').addEventListener('click', async () => {
+  document.getElementById('btnReloadSiteOverride')?.addEventListener('click', async () => {
     await renderSiteOverridePanel();
   });
 
-  /*
-  /*
-  /*
-  document.getElementById('btnSaveSiteOverride').addEventListener('click', async () => {
-    const { hostname } = await getCurrentSiteContext();
-    if (!hostname) {
-      showToast('当前页面没有可识别的站点名', 'error');
-      return;
-    }
 
-    try {
-      const raw = siteOverrideEditor.value.trim();
-      const patch = raw ? JSON.parse(raw) : undefined;
-      await saveSiteProfileOverride(activeProfileId, hostname, patch, { merge: false });
-      await renderSnapshots();
-      await renderSiteOverridePanel();
-      if (detectedData) await showFillPreview();
-      showToast(raw ? '站点覆盖已保存' : '站点覆盖已清空', 'success');
-    } catch (error) {
-      showToast(error.message || '站点覆盖 JSON 无效', 'error');
-    }
-  });
-
-  document.getElementById('btnClearSiteOverride').addEventListener('click', async () => {
-    const { hostname } = await getCurrentSiteContext();
-    if (!hostname) {
-      showToast('当前页面没有可识别的站点名', 'error');
-      return;
-    }
-    if (!confirm('清空这个站点的覆盖资料后，将回退到全局主资料。继续吗？')) return;
-
-    try {
-      await saveSiteProfileOverride(activeProfileId, hostname, undefined, { merge: false });
-      await renderSnapshots();
-      await renderSiteOverridePanel();
-      if (detectedData) await showFillPreview();
-      showToast('站点覆盖已清空', 'success');
-    } catch (error) {
-      showToast(error.message, 'error');
-    }
-  });
-
-  });
-  */
-
-  /*
-  document.getElementById('btnSaveSiteOverride').addEventListener('click', async () => {
-    const { hostname } = await getCurrentSiteContext();
-    if (!hostname) {
-      showToast('当前页面没有可识别的站点名', 'error');
-      return;
-    }
-
-    try {
-      const raw = siteOverrideEditor.value.trim();
-      const patch = raw ? JSON.parse(raw) : undefined;
-      await saveSiteProfileOverride(activeProfileId, hostname, patch, { merge: false });
-      await renderSnapshots();
-      await renderSiteOverridePanel();
-      if (detectedData) await showFillPreview();
-      showToast(raw ? '站点覆盖已保存' : '站点覆盖已清空', 'success');
-    } catch (error) {
-      showToast(error.message || '站点覆盖 JSON 无效', 'error');
-    }
-  });
-
-  document.getElementById('btnClearSiteOverride').addEventListener('click', async () => {
-    const { hostname } = await getCurrentSiteContext();
-    if (!hostname) {
-      showToast('当前页面没有可识别的站点名', 'error');
-      return;
-    }
-    if (!confirm('清空这个站点的覆盖资料后，将回退到全局主资料。继续吗？')) return;
-
-    try {
-      await saveSiteProfileOverride(activeProfileId, hostname, undefined, { merge: false });
-      await renderSnapshots();
-      await renderSiteOverridePanel();
-      if (detectedData) await showFillPreview();
-      showToast('站点覆盖已清空', 'success');
-    } catch (error) {
-      showToast(error.message, 'error');
-    }
-  });
-
-  });
-  */
-
-  document.getElementById('btnSaveSiteOverride').addEventListener('click', async () => {
+  document.getElementById('btnSaveSiteOverride')?.addEventListener('click', async () => {
     const { hostname } = await getCurrentSiteContext();
     if (!hostname) {
       showToast('No active site detected', 'error');
@@ -1380,7 +1636,7 @@ function bindEvents() {
     }
   });
 
-  document.getElementById('btnClearSiteOverride').addEventListener('click', async () => {
+  document.getElementById('btnClearSiteOverride')?.addEventListener('click', async () => {
     const { hostname } = await getCurrentSiteContext();
     if (!hostname) {
       showToast('No active site detected', 'error');
@@ -1392,6 +1648,7 @@ function bindEvents() {
       await saveSiteProfileOverride(activeProfileId, hostname, undefined, { merge: false });
       await renderSnapshots();
       await renderSiteOverridePanel();
+      await renderTargetDraftStatus();
       if (detectedData) await showFillPreview();
       showToast('Site override cleared', 'success');
     } catch (error) {
@@ -1402,6 +1659,13 @@ function bindEvents() {
   document.getElementById('btnClearHistory').addEventListener('click', async () => {
     await clearHistory();
     await renderHistory();
+  });
+
+  document.getElementById('btnClearSemanticMemory').addEventListener('click', async () => {
+    if (!confirm('�����������ϵͳ��ʧȥ������ʷվ��������ѧϰ�����������')) return;
+    await saveSemanticFieldMemory([]);
+    await renderSemanticMemoryStatus('�����');
+    showToast('������������', 'success');
   });
 
   document.getElementById('btnRefreshSnapshots').addEventListener('click', async () => {
@@ -1425,15 +1689,16 @@ function bindEvents() {
   snapshotList?.addEventListener('click', async event => {
     const button = event.target.closest('.btn-restore-snapshot');
     if (!button) return;
-    if (!confirm('恢复这个快照会覆盖当前资料，但会先自动备份当前状态。继续吗？')) return;
+    if (!confirm('�ָ�������ջḲ�ǵ�ǰ���ϣ��������Զ����ݵ�ǰ״̬��������')) return;
 
     try {
       await restoreProfileSnapshot(button.dataset.snapshotId);
       await loadProfiles();
       await renderSnapshots();
       await renderSiteOverridePanel();
+      await renderTargetDraftStatus();
       if (detectedData) await showFillPreview();
-      showToast('已恢复资料快照', 'success');
+      showToast('�ѻָ����Ͽ���', 'success');
     } catch (error) {
       showToast(error.message, 'error');
     }
@@ -1459,6 +1724,7 @@ async function init() {
   bindEvents();
   await loadProfiles();
   await renderSnapshots();
+  await renderSemanticMemoryStatus();
   await renderSiteOverridePanel();
 
   const resumeFile = await getResumeFile();

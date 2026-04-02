@@ -498,6 +498,30 @@ function extractOptions(el, doc) {
   return [];
 }
 
+const DATE_HINT_PATTERN = /(\u65e5\u671f|\u65f6\u95f4|date|time|\u751f\u65e5|\u5165\u5b66|\u6bd5\u4e1a|\u5f00\u59cb|\u7ed3\u675f)/i;
+
+function inferSafeFieldType(el, initialType, descriptorContext = {}) {
+  if (!initialType) return 'text';
+  if (!['date', 'month', 'datetime-local', 'time', 'week'].includes(initialType)) {
+    return initialType;
+  }
+
+  const hintText = [
+    descriptorContext.label,
+    ...(descriptorContext.labelCandidates || []),
+    descriptorContext.placeholder,
+    descriptorContext.title,
+    descriptorContext.helperText,
+    descriptorContext.sectionLabel,
+    descriptorContext.contextText,
+    el.getAttribute('aria-label') || '',
+    el.getAttribute('name') || '',
+    el.id || '',
+  ].filter(Boolean).join(' ');
+
+  return DATE_HINT_PATTERN.test(hintText) ? initialType : 'text';
+}
+
 /**
  * 处理单个表单字段元素，返回字段描述对象
  * @param {Element} el
@@ -533,6 +557,15 @@ function describeField(el, doc, formId, fieldIndex, adapter = null) {
   const sectionLabel = extractSectionLabel(el);
   const contextText = extractContextText(el);
   const container = findFieldContainer(el);
+  type = inferSafeFieldType(el, type, {
+    label,
+    labelCandidates,
+    placeholder: el.placeholder || '',
+    title: el.title || '',
+    helperText,
+    sectionLabel,
+    contextText,
+  });
 
   // radio 字段只记录第一个，避免重复
   if (type === 'radio') {
@@ -622,6 +655,21 @@ function propagateGroupSectionLabels(fields = []) {
   }
 }
 
+const DETECTABLE_FIELD_SELECTOR = 'input, textarea, select, [role="combobox"], [role="textbox"], [contenteditable="true"]';
+
+function collectDetectableFields(root, { standaloneOnly = false } = {}) {
+  return Array.from(root.querySelectorAll(DETECTABLE_FIELD_SELECTOR))
+    .filter(el => {
+      if (!(el instanceof Element)) return false;
+      if (standaloneOnly && el.closest('form')) return false;
+
+      const tag = el.tagName.toLowerCase();
+      if (['input', 'textarea', 'select'].includes(tag)) return true;
+      if (el.querySelector?.('input, textarea, select')) return false;
+      return true;
+    });
+}
+
 /**
  * 从 document 中扫描所有表单字段
  * @param {Document} doc
@@ -644,8 +692,7 @@ function scanDocument(doc, source = 'main', iframePath = '') {
   const formElements = Array.from(doc.forms);
 
   // 处理不在 <form> 内的独立字段
-  const standaloneSelector = 'input:not(form input), textarea:not(form textarea), select:not(form select)';
-  const standaloneFields = Array.from(doc.querySelectorAll(standaloneSelector));
+  const standaloneFields = collectDetectableFields(doc, { standaloneOnly: true });
 
   // 处理每个 <form>
   for (const form of formElements) {
@@ -653,7 +700,7 @@ function scanDocument(doc, source = 'main', iframePath = '') {
     const fields = [];
     let fieldIndex = 0;
 
-    const inputs = form.querySelectorAll('input, textarea, select');
+    const inputs = collectDetectableFields(form);
     for (const el of inputs) {
       const field = describeField(el, doc, formId, fieldIndex, adapter);
       if (field) {
