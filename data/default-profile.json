@@ -1,0 +1,253 @@
+{
+  "personal": {
+    "fullName": "测试候选人甲",
+    "fullNamePinyin": "Ce Shi Hou Xuan Ren",
+    "englishName": "Alex Test",
+    "firstName": "候选人甲",
+    "lastName": "测试",
+    "gender": "男",
+    "birthDate": "1999-01",
+    "age": 27,
+    "nationality": "中国",
+    "ethnicity": "汉族",
+    "nativePlace": "浙江杭州",
+    "politicalStatus": "共青团员",
+    "partyJoinDate": "",
+    "maritalStatus": "未婚",
+    "healthStatus": "良好",
+    "bloodType": "O",
+    "heightCm": 178,
+    "weightKg": 68,
+    "freshGraduateStatus": "应届生",
+    "hasOverseasStudy": false,
+    "photo": ""
+  },
+  "identity": {
+    "documentType": "居民身份证",
+    "documentNumber": "110101199901011234"
+  },
+  "contact": {
+    "phone": "13900001234",
+    "email": "alex.test.jobpilot@example.com",
+    "landline": "",
+    "address": "上海市浦东新区张江路 100 号",
+    "postalCode": "200120",
+    "wechat": "jobpilot_test",
+    "qq": "123456789",
+    "emergencyContactName": "测试联系人",
+    "emergencyContactPhone": "13800005678"
+  },
+  "residency": {
+    "currentCity": "上海",
+    "currentAddress": "上海市浦东新区张江路 100 号",
+    "homeAddress": "浙江省杭州市西湖区测试路 88 号",
+    "householdType": "城镇",
+    "householdAddress": "浙江省杭州市西湖区测试路 88 号",
+    "policeStation": "西湖派出所"
+  },
+  "education": [
+    {
+      "school": "测试大学",
+      "schoolCountry": "中国",
+      "degree": "硕士",
+      "educationLevel": "研究生",
+      "major": "计算机科学与技术",
+      "startDate": "2023-09",
+      "endDate": "2026-06",
+      "studyMode": "全日制",
+      "gpa": "3.9 / 4.0",
+      "ranking": "前 5%",
+      "scholarships": "研究生一等奖学金",
+      "campusPositions": "研究生会技术部部长",
+      "campusPractice": "组织校内 AI 工具培训与项目路演",
+      "customFields": {
+        "academy": "计算机学院",
+        "laboratory": "智能系统实验室",
+        "researchDirection": "生成式人工智能与推荐系统",
+        "tutor": "李明教授",
+        "studyLocation": "上海",
+        "papers": "《面向招聘场景的表单智能填写研究》"
+      }
+    },
+    {
+      "school": "样例理工大学",
+      "schoolCountry": "中国",
+      "degree": "本科",
+      "educationLevel": "本科",
+      "major": "软件工程",
+      "startDate": "2018-09",
+      "endDate": "2022-06",
+      "studyMode": "全日制",
+      "gpa": "3.8 / 4.0",
+      "ranking": "前 10%",
+      "scholarships": "国家励志奖学金",
+      "campusPositions": "班长",
+      "campusPractice": "带队完成校企联合数据平台项目",
+      "customFields": {
+        "academy": "软件学院",
+        "studyLocation": "杭州"
+      }
+    }
+  ],
+  "experience": [
+    {
+      "company": "星云数据科技（测试）",
+      "department": "平台研发部",
+      "title": "机器学习工程师实习生",
+      "startDate": "2025-06",
+      "endDate": "2025-09",
+      "location": "上海",
+      "description": "负责推荐策略实验平台与特征管道建设，支持多业务线模型训练和离线评估。",
+      "achievements": "将特征处理耗时降低 35%，AUC 提升 0.021。",
+      "customFields": {}
+    }
+  ],
+  "projects": [
+    {
+      "name": "JobPilot Demo Sandbox",
+      "role": "项目负责人",
+      "startDate": "2026-01",
+      "endDate": "2026-03",
+      "description": "为招聘站点构建通用表单检测、字段匹配、动作执行与回放评估闭环，支持真实站点回归测试。",
+      "techStack": "JavaScript, Chrome Extension, Playwright, Node.js",
+      "customFields": {}
+    },
+    {
+      "name": "Campus Resume Agent",
+      "role": "核心开发",
+      "startDate": "2025-09",
+      "endDate": "2025-12",
+      "description": "实现基于 LLM 的简历解析、字段标准化和站点差异适配，覆盖教育、项目、竞赛和语言能力等模块。",
+      "techStack": "Python, LangGraph, SQLite, RAG",
+      "customFields": {}
+    }
+  ],
+  "skills": [
+    "Python",
+    "JavaScript",
+    "TypeScript",
+    "SQL",
+    "Playwright",
+    "LangGraph",
+    "Prompt Engineering",
+    "A/B Testing",
+    "Recommendation Systems"
+  ],
+  "links": {
+    "github": "https://github.com/example/jobpilot-test",
+    "linkedin": "https://www.linkedin.com/in/alex-test-jobpilot",
+    "website": "https://example.com/jobpilot-test-profile"
+  },
+  "certificates": [
+    {
+      "name": "软件设计师",
+      "issuer": "工业和信息化部教育与考试中心",
+      "issueDate": "2024-11",
+      "credentialId": "TEST-SD-2024-001",
+      "customFields": {}
+    }
+  ],
+  "awards": [
+    {
+      "name": "全国大学生服务外包创新创业大赛一等奖",
+      "issuer": "教育部相关赛事组委会",
+      "year": "2024",
+      "description": "负责项目技术架构与答辩展示。",
+      "customFields": {}
+    }
+  ],
+  "competitions": [
+    {
+      "name": "中国大学生计算机设计大赛",
+      "level": "国家级",
+      "award": "二等奖",
+      "date": "2024-08",
+      "description": "项目方向为 AI 辅助就业服务。",
+      "customFields": {}
+    }
+  ],
+  "languages": [
+    {
+      "language": "英语",
+      "proficiency": "熟练",
+      "listeningSpeaking": "熟练",
+      "readingWriting": "熟练",
+      "customFields": {}
+    }
+  ],
+  "languageExams": [
+    {
+      "examType": "IELTS",
+      "score": "7.5",
+      "customFields": {}
+    }
+  ],
+  "developerLanguages": [
+    {
+      "name": "Python",
+      "level": "精通",
+      "customFields": {}
+    },
+    {
+      "name": "TypeScript",
+      "level": "熟练",
+      "customFields": {}
+    }
+  ],
+  "familyMembers": [],
+  "jobPreferences": {
+    "expectedLocations": [
+      "北京",
+      "上海"
+    ],
+    "expectedPositions": [
+      "机器学习工程师",
+      "数据科学家"
+    ],
+    "interviewLocations": [
+      "上海",
+      "杭州"
+    ],
+    "expectedSalary": "面议",
+    "availableFrom": "2026-07",
+    "internshipDuration": "3个月",
+    "jobStatus": "积极求职"
+  },
+  "compliance": {
+    "manualOnlyFields": [
+      "personal.gender",
+      "personal.birthDate",
+      "personal.nationality",
+      "personal.ethnicity",
+      "personal.nativePlace",
+      "personal.politicalStatus",
+      "personal.partyJoinDate",
+      "personal.maritalStatus",
+      "personal.healthStatus",
+      "personal.heightCm",
+      "personal.weightKg",
+      "personal.photo",
+      "identity.documentType",
+      "identity.documentNumber",
+      "contact.address",
+      "contact.postalCode",
+      "contact.wechat",
+      "contact.emergencyContactName",
+      "contact.emergencyContactPhone",
+      "residency.currentAddress",
+      "residency.homeAddress",
+      "residency.householdType",
+      "residency.householdAddress",
+      "residency.policeStation",
+      "languages",
+      "familyMembers"
+    ],
+    "lastReviewAt": "2026-04-03"
+  },
+  "customFields": {},
+  "meta": {
+    "schemaVersion": 2
+  },
+  "graduationYear": "2026",
+  "selfIntro": "具备机器学习、数据工程与招聘自动化工具开发背景，能够独立完成从数据处理、实验评估到端到端产品落地的全流程工作。"
+}

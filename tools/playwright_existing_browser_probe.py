@@ -13,7 +13,7 @@ from playwright.sync_api import sync_playwright
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_PROFILE = REPO_ROOT / "data" / "bytedance-live-test-profile.json"
+DEFAULT_PROFILE = REPO_ROOT / "data" / "default-profile.json"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "tmp" / "live-probes"
 DEFAULT_SESSION_FILE = REPO_ROOT / "tmp" / "controlled-browser-session.json"
 
