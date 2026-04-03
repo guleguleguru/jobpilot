@@ -601,13 +601,13 @@ test('sanitizeProfile keeps structured job preferences and extra arrays', () => 
 test('normalizeProfile preserves name pinyin for site-specific fields', () => {
   const normalized = normalizeProfile({
     personal: {
-      fullName: '宋培豪',
-      fullNamePinyin: 'Song Peihao',
+      fullName: '测试候选人甲',
+      fullNamePinyin: 'Ce Shi Hou Xuan Ren',
     },
   });
 
-  assert.equal(normalized.personal.fullName, '宋培豪');
-  assert.equal(normalized.personal.fullNamePinyin, 'Song Peihao');
+  assert.equal(normalized.personal.fullName, '测试候选人甲');
+  assert.equal(normalized.personal.fullNamePinyin, 'Ce Shi Hou Xuan Ren');
 });
 
 test('buildFieldMappingPrompt includes sanitized profile and summarized fields', () => {
@@ -840,14 +840,14 @@ test('china-taiping adapter does not fall back explicit fields to photo template
       selector: '#root > div > div:nth-of-type(3) > div:nth-of-type(2)',
     },
     profile: {
-      personal: { fullName: '宋培豪' },
+      personal: { fullName: '测试候选人甲' },
     },
     helpers: {
       claimGroupedKey(group, subkey) {
         return `${group}[0].${subkey}`;
       },
       getProfileValue() {
-        return '宋培豪';
+        return '测试候选人甲';
       },
       isSensitiveField() {
         return false;
@@ -875,7 +875,7 @@ test('china-taiping adapter ignores photo hints leaking from noisy label candida
       selector: '#root > div > div:nth-of-type(1) > div:nth-of-type(1)',
     },
     profile: {
-      personal: { fullName: '宋培豪' },
+      personal: { fullName: '测试候选人甲' },
     },
     helpers: {
       claimGroupedKey(group, subkey) {
@@ -2312,13 +2312,13 @@ test('normalizeProfile keeps language exams in a dedicated array', () => {
 
 test('site override helpers normalize hostnames and preserve sparse patch data', () => {
   const patch = sanitizeProfileOverridePatch({
-    personal: { englishName: '  Peter Song  ', fullName: '' },
+    personal: { englishName: '  Alex Test  ', fullName: '' },
     languages: [{ customFields: { examType: ' TEM-8 ' } }, {}],
     familyMembers: [{ identityType: '配偶', customFields: { relationCode: 'spouse' } }],
   });
 
   assert.equal(normalizeSiteKey('https://cntp.zhiye.com/form?job=1'), 'cntp.zhiye.com');
-  assert.equal(patch.personal.englishName, 'Peter Song');
+  assert.equal(patch.personal.englishName, 'Alex Test');
   assert.equal(patch.personal.fullName, undefined);
   assert.equal(patch.languages[0].customFields.examType, 'TEM-8');
   assert.equal(patch.languages.length, 1);
@@ -2328,19 +2328,19 @@ test('site override helpers normalize hostnames and preserve sparse patch data',
 test('mergeProfileWithOverride keeps base profile fields while applying site-specific values', () => {
   const merged = mergeProfileWithOverride(
     normalizeProfile({
-      personal: { fullName: '宋培豪' },
+      personal: { fullName: '测试候选人甲' },
       languages: [{ language: '英语', proficiency: 'CET-6' }],
-      familyMembers: [{ relation: '父亲', name: '宋某' }],
+      familyMembers: [{ relation: '父亲', name: '测试家属' }],
     }),
     {
-      personal: { englishName: 'Peter Song' },
+      personal: { englishName: 'Alex Test' },
       languages: [{ customFields: { certType: 'TEM-8' } }],
       familyMembers: [{ identityType: '配偶', customFields: { relationCode: 'spouse' } }],
     }
   );
 
-  assert.equal(merged.personal.fullName, '宋培豪');
-  assert.equal(merged.personal.englishName, 'Peter Song');
+  assert.equal(merged.personal.fullName, '测试候选人甲');
+  assert.equal(merged.personal.englishName, 'Alex Test');
   assert.equal(merged.languages[0].language, '英语');
   assert.equal(merged.languages[0].proficiency, 'CET-6');
   assert.equal(merged.languages[0].customFields.certType, 'TEM-8');
@@ -2377,7 +2377,7 @@ test('target profile context helpers detect empty state and build user-facing la
 test('mergeProfileWithTargetDraft applies sparse target-specific fields without losing base data', () => {
   const merged = mergeProfileWithTargetDraft(
     normalizeProfile({
-      personal: { fullName: '宋培豪' },
+      personal: { fullName: '测试候选人甲' },
       selfIntro: '通用版自我介绍',
       jobPreferences: {
         expectedPositions: ['数据科学家'],
@@ -2394,7 +2394,7 @@ test('mergeProfileWithTargetDraft applies sparse target-specific fields without 
     }
   );
 
-  assert.equal(merged.personal.fullName, '宋培豪');
+  assert.equal(merged.personal.fullName, '测试候选人甲');
   assert.equal(merged.selfIntro, '更偏向算法岗位的自我介绍');
   assert.deepEqual(merged.jobPreferences.expectedPositions, ['算法工程师']);
   assert.deepEqual(merged.jobPreferences.expectedLocations, ['上海']);
@@ -2410,7 +2410,7 @@ test('buildTargetProfilePrompt includes target role context and requests sparse 
       notes: '突出推荐系统和大模型项目经验',
     },
     normalizeProfile({
-      personal: { fullName: '宋培豪' },
+      personal: { fullName: '测试候选人甲' },
       selfIntro: '通用版',
       jobPreferences: { expectedPositions: ['数据科学家'] },
     })
@@ -2431,7 +2431,7 @@ test('storage keeps only seven snapshots and merges site-specific profile overri
         data: normalizeProfile({
           personal: { fullName: '初始版本' },
           languages: [{ language: '英语', proficiency: 'CET-6' }],
-          familyMembers: [{ relation: '父亲', name: '宋某' }],
+          familyMembers: [{ relation: '父亲', name: '测试家属' }],
         }),
         createdAt: '2026-03-31T00:00:00.000Z',
       },
@@ -2443,7 +2443,7 @@ test('storage keeps only seven snapshots and merges site-specific profile overri
     await mod.saveActiveProfileData({
       personal: { fullName: `版本 ${index}` },
       languages: [{ language: '英语', proficiency: 'CET-6' }],
-      familyMembers: [{ relation: '父亲', name: '宋某' }],
+      familyMembers: [{ relation: '父亲', name: '测试家属' }],
     });
   }
 
@@ -2458,14 +2458,14 @@ test('storage keeps only seven snapshots and merges site-specific profile overri
     familyMembers: [{ identityType: '配偶', customFields: { relationCode: 'spouse' } }],
   });
   await mod.saveSiteProfileOverride('default', 'cntp.zhiye.com', {
-    personal: { englishName: 'Peter Song' },
+    personal: { englishName: 'Alex Test' },
   });
 
   const siteProfile = await mod.getProfile('cntp.zhiye.com');
   const baseProfile = await mod.getProfile();
   assert.equal(baseProfile.languages[0].customFields?.certType, undefined);
   assert.equal(baseProfile.personal.englishName, '');
-  assert.equal(siteProfile.personal.englishName, 'Peter Song');
+  assert.equal(siteProfile.personal.englishName, 'Alex Test');
   assert.equal(siteProfile.languages[0].customFields.certType, 'TEM-8');
   assert.equal(siteProfile.familyMembers[0].relation, '父亲');
   assert.equal(siteProfile.familyMembers[0].identityType, '配偶');
@@ -2477,7 +2477,7 @@ test('storage persists target profile drafts and merges them on demand', async (
       default: {
         name: '默认资料',
         data: normalizeProfile({
-          personal: { fullName: '宋培豪' },
+          personal: { fullName: '测试候选人甲' },
           selfIntro: '通用介绍',
           jobPreferences: { expectedPositions: ['数据科学家'] },
         }),
@@ -2563,7 +2563,7 @@ test('storage supports replacing a site override patch from editor-style saves',
       default: {
         name: '默认资料',
         data: normalizeProfile({
-          personal: { fullName: '宋培豪' },
+          personal: { fullName: '测试候选人甲' },
           languages: [{ language: '英语', proficiency: 'CET-6' }],
         }),
         createdAt: '2026-03-31T00:00:00.000Z',
@@ -2576,11 +2576,11 @@ test('storage supports replacing a site override patch from editor-style saves',
     languages: [{ customFields: { certType: 'TEM-8' } }],
   });
   await mod.saveSiteProfileOverride('default', 'cntp.zhiye.com', {
-    personal: { englishName: 'Peter Song' },
+    personal: { englishName: 'Alex Test' },
   }, { merge: false });
 
   const siteProfile = await mod.getProfile('cntp.zhiye.com');
-  assert.equal(siteProfile.personal.englishName, 'Peter Song');
+  assert.equal(siteProfile.personal.englishName, 'Alex Test');
   assert.equal(siteProfile.languages[0].customFields?.certType, undefined);
 });
 
